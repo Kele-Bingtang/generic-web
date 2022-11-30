@@ -1,5 +1,5 @@
 <template>
-  <div class="project-card-container">
+  <div class="project-card-component">
     <div class="header" v-if="!onlyBody" @click="handleClick">
       <slot name="header">projectName</slot>
       <i class="el-icon-right action"></i>
@@ -37,7 +37,7 @@ export default class ProjectsCard extends Vue {
 </script>
 
 <style lang="scss" scoped>
-.project-card-container {
+.project-card-component {
   width: 100%;
   height: 220px;
   background: #fff;
@@ -78,10 +78,20 @@ export default class ProjectsCard extends Vue {
       height: 100%;
     }
   }
-  .body .footer {
+  .footer {
     height: 40px;
     display: flex;
     line-height: 40px;
+    & > * {
+      flex: 1 1;
+      text-align: center;
+      display: inline-block;
+      height: 40px;
+      cursor: pointer;
+      &:hover {
+        background-color: #f2f2f2;
+      }
+    }
   }
 }
 </style>

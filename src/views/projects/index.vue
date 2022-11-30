@@ -1,42 +1,145 @@
 <template>
   <div class="projects-container">
-    <el-tabs type="border-card" class="projects-tabs">
-      <el-tab-pane label="我的项目">
+    <el-tabs type="border-card" v-model="activeName" class="projects-tabs">
+      <el-tab-pane label="我的项目" name="default">
         <el-row :gutter="10">
-          <el-col :xs="12" :sm="12" :md="6" :lg="6" :xl="4">
+          <el-col
+            :xs="12"
+            :sm="12"
+            :md="6"
+            :lg="6"
+            :xl="4"
+            v-for="item in projectList"
+            :key="item.baseUrl"
+            style="margin-bottom: 10px"
+          >
             <project-card @header-click="handleHeaderClick('GenericService 项目')">
               <template #header>
-                <span>GenericService 项目</span>
+                <span>{{ item.name }}</span>
               </template>
-              <div class="base-url">/api</div>
-              <div class="description">通用后台管理系统</div>
+              <div class="base-url">{{ item.baseUrl }}</div>
+              <div class="description">{{ item.description }}</div>
+              <template #footer>
+                <el-button type="text" icon="el-icon-view" class="btn-primary"></el-button>
+                <el-button type="text" icon="el-icon-delete" class="btn-danger"></el-button>
+                <el-button type="text" icon="el-icon-setting" class="btn-warning"></el-button>
+              </template>
             </project-card>
           </el-col>
           <el-col :xs="12" :sm="12" :md="6" :lg="6" :xl="4">
-            <project-card :only-body="true" class="plus-project">
+            <project-card :only-body="true" class="plus-project" @click.native="addProject">
               <i class="el-icon-plus action"></i>
             </project-card>
           </el-col>
         </el-row>
       </el-tab-pane>
-      <el-tab-pane label="我加入的">我加入的</el-tab-pane>
-      <el-tab-pane label="我创建的">我创建的</el-tab-pane>
+      <el-tab-pane label="我加入的" name="join" lazy>我加入的</el-tab-pane>
+      <el-tab-pane label="我创建的" name="create" lazy>我创建的</el-tab-pane>
     </el-tabs>
+
+    <el-dialog v-draggable-dialog title="添加项目" :visible.sync="dialogVisible" width="30%">
+      <el-form ref="projectForm" :model="projectForm" :rules="projectRules" label-width="110px">
+        <el-form-item label="项目名称：" prop="name">
+          <el-input v-model="projectForm.name" placeholder="请输入项目名称"></el-input>
+        </el-form-item>
+        <el-form-item label="接口基础路径" prop="baseUrl" class="item-base-url">
+          <el-tooltip effect="dark" content="" placement="right">
+            <div slot="content" style="line-height: 1.5715">
+              接口基础路径为 '/' 开头有字母或 数
+              <br />
+              字 组成的字符串如：'/shop01' 不能
+              <br />
+              有多个 '/'
+            </div>
+            <i class="el-icon-question"></i>
+          </el-tooltip>
+          ：
+          <el-input v-model="projectForm.baseUrl" placeholder="请输入接口基础路径" style="width: 384px"></el-input>
+        </el-form-item>
+        <el-form-item label="项目描述：" prop="description">
+          <el-input
+            type="textarea"
+            :autosize="{ minRows: 4 }"
+            v-model="projectForm.description"
+            placeholder="请输入项目描述"
+          ></el-input>
+        </el-form-item>
+      </el-form>
+      <span slot="footer" class="dialog-footer">
+        <el-button v-waves @click="dialogVisible = false">取 消</el-button>
+        <el-button v-waves type="primary" @click="addProjectConfirm">确 定</el-button>
+      </span>
+    </el-dialog>
   </div>
 </template>
 
 <script lang="ts">
 import { Component, Vue } from "vue-property-decorator";
-import ProjectCard from "./components/projectCard.vue";
+import ProjectCard from "@/components/ProjectCard/index.vue";
+import { Form } from "element-ui";
+
+interface Project {
+  id?: string;
+  name: string;
+  baseUrl: string;
+  description: string;
+}
+
+const defaultProject: Project = {
+  name: "",
+  baseUrl: "",
+  description: "",
+};
 
 @Component({
   components: { ProjectCard },
 })
 export default class Projects extends Vue {
+  public activeName = "default";
+  public dialogVisible = false;
+
+  public projectList: Array<Project> = [];
+
+  public projectForm: Project = { ...defaultProject };
+
+  public projectRules = {
+    name: [{ required: true, message: "请输入项目名称", trigger: "change" }],
+    baseUrl: [{ required: true, message: "请输入接口基础路径", trigger: "change" }],
+    description: [{ required: true, message: "请输入项目描述", trigger: "change" }],
+  };
+
   public handleHeaderClick(projectName: string) {
     if (projectName) {
       this.$router.push({ path: `/project/details/${projectName}/b0b097a64a352d83027145556890c3c2` });
     }
+  }
+
+  public addProject() {
+    this.dialogVisible = true;
+    this.$nextTick(() => {
+      (this.$refs.projectForm as Form).clearValidate();
+    });
+  }
+
+  public addProjectConfirm() {
+    (this.$refs.projectForm as Form).validate(valid => {
+      if (valid) {
+        let project = {
+          ...this.projectForm,
+        };
+        this.projectList.push(project);
+        this.projectForm = { ...defaultProject };
+        this.dialogVisible = false;
+        this.$notify({
+          title: "Success",
+          message: "新增成功",
+          type: "success",
+          duration: 3000,
+        });
+      } else {
+        return false;
+      }
+    });
   }
 }
 </script>
@@ -55,6 +158,9 @@ export default class Projects extends Vue {
       line-height: 220px;
       color: #999;
       cursor: pointer;
+      &:hover {
+        background-color: #f2f2f2;
+      }
       .el-icon-plus.action {
         font-size: 60px;
       }
@@ -91,6 +197,11 @@ export default class Projects extends Vue {
     text-transform: none;
     text-rendering: optimizelegibility;
     -webkit-font-smoothing: antialiased;
+  }
+  .el-dialog {
+    .item-base-url label {
+      padding-right: 5px;
+    }
   }
 }
 </style>
