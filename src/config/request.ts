@@ -1,3 +1,4 @@
+import { UserModule } from "@/store/modules/user";
 import axios, { AxiosRequestConfig } from "axios";
 
 const cancelToken = axios.CancelToken;
@@ -5,18 +6,18 @@ const source = cancelToken.source();
 
 // 创建 axios 实例
 const service = axios.create({
-  baseURL: process.env.VUE_APP_BASE_API,
+  baseURL: process.env.VUE_APP_BASE_URL,
   timeout: 5000,
 });
 
 // request 拦截器
 service.interceptors.request.use(
   config => {
-    // config.headers['Content-Type'] = 'application/json;charset=utf-8';
     // if(!token) {
     //   config.cancelToken = source.token;
     //   source.cancel("身份异常！")
     // }
+    config.headers!["Authorization"] = `Bearer ${UserModule.token}`;
     return config;
   },
   error => {

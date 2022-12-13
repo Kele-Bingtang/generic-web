@@ -7,9 +7,7 @@
           查询
         </el-button>
         <el-button v-waves icon="el-icon-refresh" @click="handleReset">重置</el-button>
-        <el-checkbox v-model="showAddress" style="margin-left: 15px" @change="tableKey = tableKey + 1">
-          地址
-        </el-checkbox>
+        <el-button v-waves type="warning" icon="el-icon-plus" @click="handleAdd()" style="float: right">导出</el-button>
         <el-button v-waves type="primary" icon="el-icon-plus" @click="handleAdd()" style="float: right">添加</el-button>
       </div>
     </div>
@@ -22,44 +20,15 @@
         :key="tableKey"
         style="width: 100%"
         v-loading="loading"
-        @row-dblclick="handleInlineEdit"
         ref="table"
       >
-        <el-table-column prop="id" label="ID" width="70" align="center" sortable></el-table-column>
-        <el-table-column prop="date" label="日期" width="180px"></el-table-column>
-        <el-table-column prop="name" label="姓名" width="150px"></el-table-column>
-        <el-table-column min-width="100" label="标题">
-          <template slot-scope="{ row }">
-            <template v-if="row.edit">
-              <el-input v-model="row.title" class="edit-input" size="small" />
-              <el-button
-                class="cancel-btn"
-                size="small"
-                icon="el-icon-refresh"
-                type="warning"
-                circle
-                @click="cancelEdit(row)"
-              ></el-button>
-              <el-button
-                class="confirm-btn"
-                size="small"
-                icon="el-icon-check"
-                type="primary"
-                circle
-                @click="confirmEdit(row)"
-              ></el-button>
-            </template>
-            <span v-else style="color: var(--theme-color); cursor: pointer" @click="handleEdit(row)">
-              {{ row.title }}
-            </span>
-          </template>
-        </el-table-column>
-        <el-table-column prop="address" label="地址" v-if="showAddress"></el-table-column>
-        <el-table-column prop="priority" label="优先级" width="140">
-          <template slot-scope="{ row }">
-            <svg-icon v-for="n in row.priority" :key="n" name="star" style="color: #606266" />
-          </template>
-        </el-table-column>
+        <el-table-column type="selection" width="55"></el-table-column>
+        <el-table-column prop="serviceName" label="接口名称" width="180px"></el-table-column>
+        <el-table-column prop="reportTitle" label="报表名称" width="180px"></el-table-column>
+        <el-table-column prop="status" label="接口状态" width="150px"></el-table-column>
+        <el-table-column prop="serviceUrl" label="接口地址"></el-table-column>
+        <el-table-column prop="serviceDesc" label="接口描述"></el-table-column>
+        <el-table-column prop="createTime" label="创建时间"></el-table-column>
 
         <el-table-column label="操作" width="200px">
           <template slot-scope="{ row, $index }">
@@ -150,29 +119,17 @@
 </template>
 
 <script lang="ts">
-import { largeData } from "@/test/table";
 import { Form } from "element-ui";
 import { Component, Prop, Vue } from "vue-property-decorator";
 import Pagination, { Paging, paging } from "@/components/Pagination/index.vue";
+import { defaultServiceData, ServiceModule } from "@/api/service";
 
-export interface Service {
-  [propName: string]: any;
-}
-
-const defaultServiceData = {
-  id: "",
-  name: "",
-  date: "",
-  address: "",
-  status: "",
-  priority: 0,
-  title: "",
-};
+type Service = ServiceModule.Service;
 
 @Component({
   components: { Pagination },
 })
-export default class CatalogTable extends Vue {
+export default class ServiceTable extends Vue {
   @Prop({ required: true })
   public data!: Array<Service>;
 
@@ -214,21 +171,17 @@ export default class CatalogTable extends Vue {
   };
   public tempTableDate = defaultServiceData;
 
-  public serviceData = largeData;
+  public serviceData: Array<Service> = [];
 
   mounted() {
-    this.serviceData = this.serviceData.map(item => {
-      this.$set(item, "edit", false);
-      this.$set(item, "originalTitle", item.title);
-      return item;
-    });
+    this.serviceData = { ...this.data };
     this.loading = false;
   }
 
   // 应该将参数 searchParams 传到后台，这里演示本地数据查询
   public handleSearch() {
     this.loading = true;
-    this.serviceData = largeData;
+    this.serviceData = { ...this.data };
     if (this.searchParams.serviceName === "") {
       this.loading = false;
       return;
@@ -236,7 +189,7 @@ export default class CatalogTable extends Vue {
     let serviceData = [...this.serviceData];
     if (this.searchParams.serviceName) {
       serviceData = this.serviceData.filter(item => {
-        return item.name.indexOf(this.searchParams.serviceName) !== -1;
+        return item.serviceName.indexOf(this.searchParams.serviceName) !== -1;
       });
     }
     this.serviceData = serviceData;
@@ -244,7 +197,7 @@ export default class CatalogTable extends Vue {
   }
 
   public handleReset() {
-    this.serviceData = largeData;
+    this.$emit("reset");
   }
 
   public handleAdd() {
@@ -259,42 +212,16 @@ export default class CatalogTable extends Vue {
     (this.$refs.dataForm as Form).validate(async valid => {
       if (valid) {
         const serviceData = this.tempTableDate;
-        serviceData.id = Math.round(Math.random() * 100) + 1024 + ""; // 随机一个 id
-        this.serviceData.unshift(serviceData);
-        this.dialogFormVisible = false;
-        this.$notify({
-          title: "成功",
-          message: "创建成功",
-          type: "success",
-          duration: 2000,
-        });
+        // serviceData.id = Math.round(Math.random() * 100) + 1024 + ""; // 随机一个 id
+        // this.serviceData.unshift(serviceData);
+        // this.dialogFormVisible = false;
+        // this.$notify({
+        //   title: "成功",
+        //   message: "创建成功",
+        //   type: "success",
+        //   duration: 2000,
+        // });
       }
-    });
-  }
-
-  public handleInlineEdit(row: any) {
-    if (row.edit) {
-      this.cancelEdit(row);
-    } else {
-      row.edit = !row.edit;
-    }
-  }
-
-  public cancelEdit(row: any) {
-    row.title = row.originalTitle;
-    row.edit = false;
-    this.$message({
-      message: "标题已恢复为原始值！",
-      type: "warning",
-    });
-  }
-
-  public confirmEdit(row: any) {
-    row.edit = false;
-    row.originalTitle = row.title;
-    this.$message({
-      message: "标题已编辑！",
-      type: "success",
     });
   }
 

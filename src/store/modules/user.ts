@@ -1,11 +1,12 @@
 import { VuexModule, Module, Mutation, Action, getModule } from "vuex-module-decorators";
 import store from "@/store";
-import { removeCacheToken, setCacheToken } from "@/utils/cache";
+import { getCacheToken, removeCacheToken, setCacheToken } from "@/utils/cache";
 import { resetRouter } from "@/router";
 import { LayoutModule } from "./layout";
 import { loadRoutes } from "@/router/utils";
 import { rolesRoutes } from "@/router/routes-config";
 import router from "@/router";
+import { login, LoginInfo } from "@/api/user";
 
 export interface UserInfo {
   userId: string; // 用户 ID
@@ -26,9 +27,9 @@ export interface UserState {
 
 @Module({ dynamic: true, store, name: "user", namespaced: true })
 class User extends VuexModule implements UserState {
-  public token: string = "admin-token";
+  public token: string = getCacheToken() || "";
   public userInfo: UserInfo = {
-    userId: "v10001",
+    userId: "10001",
     userName: "Visitor",
     sex: "男",
     email: "2456019588@qq.com",
@@ -40,10 +41,13 @@ class User extends VuexModule implements UserState {
   public roles: string[] = [];
 
   @Action
-  public login() {
-    let token = "admin-token";
-    setCacheToken(token);
-    this.SET_TOKEN(token);
+  public async login(loginInfo: LoginInfo) {
+    let { username, password } = loginInfo;
+    username = username.trim();
+    let { data } = await login({ username, password });
+    setCacheToken(data);
+    this.SET_TOKEN(data);
+    return data;
   }
 
   @Action
@@ -64,7 +68,7 @@ class User extends VuexModule implements UserState {
   @Action
   public async getUserInfo() {
     let userInfo: UserInfo = {
-      userId: "v10001",
+      userId: "10001",
       userName: "Visitor",
       sex: "男",
       email: "2456019588@qq.com",

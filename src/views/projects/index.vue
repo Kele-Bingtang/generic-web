@@ -10,19 +10,34 @@
             :lg="6"
             :xl="4"
             v-for="item in projectList"
-            :key="item.baseUrl"
+            :key="item.id"
             style="margin-bottom: 10px"
           >
-            <project-card @header-click="handleHeaderClick('GenericService 项目')">
+            <project-card @header-click="handleHeaderClick(item)">
               <template #header>
-                <span>{{ item.name }}</span>
+                <span>{{ item.projectName }}</span>
               </template>
               <div class="base-url">{{ item.baseUrl }}</div>
               <div class="description">{{ item.description }}</div>
               <template #footer>
-                <el-button type="text" icon="el-icon-view" class="btn-primary"></el-button>
-                <el-button type="text" icon="el-icon-delete" class="btn-danger"></el-button>
-                <el-button type="text" icon="el-icon-setting" class="btn-warning"></el-button>
+                <el-button
+                  type="text"
+                  icon="el-icon-view"
+                  class="btn-primary"
+                  @click="handleHeaderClick(item)"
+                ></el-button>
+                <el-button
+                  type="text"
+                  icon="el-icon-delete"
+                  class="btn-danger"
+                  @click="deleteProject(item)"
+                ></el-button>
+                <el-button
+                  type="text"
+                  icon="el-icon-setting"
+                  class="btn-warning"
+                  @click="editProject(item)"
+                ></el-button>
               </template>
             </project-card>
           </el-col>
@@ -37,10 +52,10 @@
       <el-tab-pane label="我创建的" name="create" lazy>我创建的</el-tab-pane>
     </el-tabs>
 
-    <el-dialog v-draggable-dialog title="添加项目" :visible.sync="dialogVisible" width="30%">
+    <el-dialog v-draggable-dialog :title="dialogTitle[operatorType]" :visible.sync="dialogVisible" width="30%">
       <el-form ref="projectForm" :model="projectForm" :rules="projectRules" label-width="110px">
-        <el-form-item label="项目名称：" prop="name">
-          <el-input v-model="projectForm.name" placeholder="请输入项目名称"></el-input>
+        <el-form-item label="项目名称：" prop="projectName">
+          <el-input v-model="projectForm.projectName" placeholder="请输入项目名称"></el-input>
         </el-form-item>
         <el-form-item label="接口基础路径" prop="baseUrl" class="item-base-url">
           <el-tooltip effect="dark" content="" placement="right">
@@ -64,10 +79,19 @@
             placeholder="请输入项目描述"
           ></el-input>
         </el-form-item>
+        <el-form-item label="数据库：" prop="databaseName">
+          <el-input v-model="projectForm.databaseName" placeholder="请输入数据库"></el-input>
+        </el-form-item>
       </el-form>
       <span slot="footer" class="dialog-footer">
         <el-button v-waves @click="dialogVisible = false">取 消</el-button>
-        <el-button v-waves type="primary" @click="addProjectConfirm">确 定</el-button>
+        <el-button
+          v-waves
+          type="primary"
+          @click="operatorType === 'add' ? addProjectConfirm() : operatorType === 'edit' ? editProjectConfirm() : ''"
+        >
+          确 定
+        </el-button>
       </span>
     </el-dialog>
   </div>
@@ -77,19 +101,17 @@
 import { Component, Vue } from "vue-property-decorator";
 import ProjectCard from "@/components/ProjectCard/index.vue";
 import { Form } from "element-ui";
+import {
+  insertProject,
+  ProjectModule,
+  queryProjectList,
+  deleteProject,
+  updateProject,
+  defaultProjectData,
+} from "@/api/project";
+import { UserModule } from "@/store/modules/user";
 
-interface Project {
-  id?: string;
-  name: string;
-  baseUrl: string;
-  description: string;
-}
-
-const defaultProject: Project = {
-  name: "",
-  baseUrl: "",
-  description: "",
-};
+type Project = ProjectModule.Project;
 
 @Component({
   components: { ProjectCard },
@@ -97,25 +119,35 @@ const defaultProject: Project = {
 export default class Projects extends Vue {
   public activeName = "default";
   public dialogVisible = false;
+  public operatorType: "add" | "edit" | "" = "";
+  public dialogTitle: { [propName: string]: string } = {
+    add: "添加项目",
+    edit: "编辑项目",
+  };
 
   public projectList: Array<Project> = [];
 
-  public projectForm: Project = { ...defaultProject };
+  public projectForm = { ...defaultProjectData };
 
   public projectRules = {
-    name: [{ required: true, message: "请输入项目名称", trigger: "change" }],
+    projectName: [{ required: true, message: "请输入项目名称", trigger: "change" }],
     baseUrl: [{ required: true, message: "请输入接口基础路径", trigger: "change" }],
     description: [{ required: true, message: "请输入项目描述", trigger: "change" }],
   };
 
-  public handleHeaderClick(projectName: string) {
-    if (projectName) {
-      this.$router.push({ path: `/project/details/${projectName}/b0b097a64a352d83027145556890c3c2` });
-    }
+  mounted() {
+    this.getProject();
+  }
+
+  public getProject() {
+    queryProjectList().then(res => {
+      this.projectList = res.data;
+    });
   }
 
   public addProject() {
     this.dialogVisible = true;
+    this.operatorType = "add";
     this.$nextTick(() => {
       (this.$refs.projectForm as Form).clearValidate();
     });
@@ -127,19 +159,122 @@ export default class Projects extends Vue {
         let project = {
           ...this.projectForm,
         };
-        this.projectList.push(project);
-        this.projectForm = { ...defaultProject };
-        this.dialogVisible = false;
-        this.$notify({
-          title: "Success",
-          message: "新增成功",
-          type: "success",
-          duration: 3000,
+        project.createUser = UserModule.userInfo.userId;
+        project.modifyUser = UserModule.userInfo.userId;
+        insertProject(project as Project).then(res => {
+          if (res.codeMessage === "success") {
+            this.$notify({
+              title: "Success",
+              message: "新增成功",
+              type: "success",
+              duration: 3000,
+            });
+            this.$nextTick(() => {
+              this.projectForm = { ...defaultProjectData };
+              this.getProject();
+            });
+          } else {
+            this.$notify({
+              title: "Error",
+              message: "新增失败",
+              type: "error",
+              duration: 3000,
+            });
+          }
+          this.dialogVisible = false;
         });
       } else {
         return false;
       }
     });
+  }
+
+  public editProject(project: Project) {
+    this.dialogVisible = true;
+    this.operatorType = "edit";
+    let { id, projectName, baseUrl, description, databaseName } = project;
+    this.projectForm = { id, projectName, baseUrl, description, databaseName };
+    this.projectForm.modifyUser = UserModule.userInfo.userId;
+    this.$nextTick(() => {
+      (this.$refs.projectForm as Form).clearValidate();
+    });
+  }
+
+  public editProjectConfirm() {
+    (this.$refs.projectForm as Form).validate(valid => {
+      if (valid) {
+        let project = {
+          ...this.projectForm,
+        };
+        project.createUser = UserModule.userInfo.userId;
+        project.modifyUser = UserModule.userInfo.userId;
+        updateProject(project as Project).then(res => {
+          if (res.codeMessage === "success") {
+            this.$notify({
+              title: "Success",
+              message: "更新成功",
+              type: "success",
+              duration: 3000,
+            });
+            this.$nextTick(() => {
+              this.projectForm = { ...defaultProjectData };
+              this.getProject();
+            });
+          } else {
+            this.$notify({
+              title: "Error",
+              message: "更新失败",
+              type: "error",
+              duration: 3000,
+            });
+          }
+          this.dialogVisible = false;
+        });
+      } else {
+        return false;
+      }
+    });
+  }
+
+  public handleHeaderClick(project: Project) {
+    let { id, projectName, secretKey, baseUrl } = project;
+    if (id) {
+      this.$router.push({
+        path: `/project/details/${projectName}/${secretKey}`,
+        query: {
+          baseUrl: baseUrl,
+        },
+      });
+    }
+  }
+
+  public deleteProject(project: Project) {
+    this.$confirm("此操作将永久删除该项目, 是否继续?", "提示", {
+      confirmButtonText: "确定",
+      cancelButtonText: "取消",
+      type: "warning",
+    })
+      .then(() => {
+        deleteProject(project).then(res => {
+          if (res.data) {
+            this.$nextTick(() => {
+              this.getProject();
+            });
+            this.$notify({
+              title: "Success",
+              type: "success",
+              message: "删除成功!",
+            });
+          } else {
+            this.$notify({
+              title: "Error",
+              type: "error",
+              message: "删除失败!",
+            });
+          }
+        });
+      })
+      .catch();
   }
 }
 </script>

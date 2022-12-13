@@ -4,7 +4,14 @@
       <el-row :gutter="10" style="height: 100%">
         <el-col :span="18" style="height: 100%; border-right: 1px solid #f0f0f0">
           <div class="project-info">
-            {{ $route.params && $route.params.projectName }}
+            <div class="info-item">
+              <span>接口地址</span>
+              <span>{{ url }}</span>
+            </div>
+            <div class="info-item">
+              <span>项目密钥</span>
+              <span>{{ $route.params && $route.params.secretKey }}</span>
+            </div>
           </div>
         </el-col>
         <el-col :span="4" style="height: 100%">
@@ -24,14 +31,14 @@
         :name="item.name"
         :closable="item.closable"
       >
-        <catalog-table :data="serviceData" />
+        <service-table :data="serviceData" />
       </el-tab-pane>
     </el-tabs>
 
     <el-dialog v-draggable-dialog title="创建目录" :visible.sync="dialogVisible" width="30%">
-      <el-form ref="catalogForm" :model="catalogForm" :rules="catalogueRules" label-width="80px">
-        <el-form-item label="目录名称" prop="catalog">
-          <el-input v-model="catalogForm.catalog" placeholder="请输入目录名称"></el-input>
+      <el-form ref="categoryForm" :model="categoryForm" :rules="getCategoryRules" label-width="80px">
+        <el-form-item label="目录名称" prop="category">
+          <el-input v-model="categoryForm.category" placeholder="请输入目录名称"></el-input>
         </el-form-item>
       </el-form>
       <span slot="footer" class="dialog-footer">
@@ -45,42 +52,66 @@
 <script lang="ts">
 import { Form, TabPane } from "element-ui";
 import { Component, Vue } from "vue-property-decorator";
-import CatalogTable, { Service } from "@/components/CatalogTable/index.vue";
-import { largeData } from "@/test/table";
+import ServiceTable from "@/components/ServiceTable/index.vue";
+import { queryGenericServiceListPages, ServiceModule } from "@/api/service";
+import { queryCategoryList } from "@/api/category";
+
+export interface Tab {
+  title: string;
+  name: string;
+  closable: boolean;
+}
 
 @Component({
-  components: { CatalogTable },
+  components: { ServiceTable },
 })
 export default class ProjectDetail extends Vue {
   public activeName = "default";
   public dialogVisible = false;
-  public serviceData: Service = largeData;
+  public serviceData: Array<ServiceModule.Service> = [];
 
-  public tabs = [
-    {
-      title: "默认目录",
-      name: "default",
-      closable: false,
-    },
-    {
-      title: "桌面端",
-      name: "pc",
-      closable: true,
-    },
-    {
-      title: "移动端",
-      name: "mobile",
-      closable: true,
-    },
-  ];
-  public catalogForm = {
-    catalog: "",
+  public tabs: Array<Tab> = [];
+  public categoryForm = {
+    category: "",
   };
-  public catalogueRules = {
-    catalog: [{ required: true, message: "请输入目录名称", trigger: "change" }],
+  public getCategoryRules = {
+    category: [{ required: true, message: "请输入目录名称", trigger: "change" }],
   };
 
-  mounted() {}
+  get url() {
+    return window.location.origin + this.$route.query.baseUrl;
+  }
+
+  mounted() {
+    this.getCategory();
+    this.getServiceList();
+  }
+
+  public getServiceList() {
+    queryGenericServiceListPages(undefined, { pageNo: 1, pageSize: 20 }).then(res => {
+      this.serviceData = res.data;
+    });
+  }
+
+  public getCategory() {
+    queryCategoryList().then(res => {
+      res.data.forEach((item, index) => {
+        let category = {
+          title: item.categoryName,
+          name: item.categoryCode,
+          closable: index === 0 ? false : true,
+        };
+        this.tabs.push(category);
+      });
+      if (this.tabs.length === 0) {
+        this.tabs.push({
+          title: "默认目录",
+          name: "default",
+          closable: false,
+        });
+      }
+    });
+  }
 
   public clickTab(tab: TabPane, event: Event) {
     // console.log(tab, event);
@@ -89,7 +120,7 @@ export default class ProjectDetail extends Vue {
   public addTab() {
     this.dialogVisible = true;
     this.$nextTick(() => {
-      (this.$refs.catalogForm as Form).clearValidate();
+      (this.$refs.categoryForm as Form).clearValidate();
     });
   }
 
@@ -111,7 +142,7 @@ export default class ProjectDetail extends Vue {
   }
 
   public addTabConfirm() {
-    (this.$refs.catalogForm as Form).validate(valid => {
+    (this.$refs.categoryForm as Form).validate(valid => {
       if (valid) {
         this.$notify({
           title: "Success",
@@ -131,9 +162,33 @@ export default class ProjectDetail extends Vue {
 .project-detail-container {
   padding: 20px;
   .project-detail-info {
-    height: 100px;
+    height: 130px;
     .project-info {
       padding: 20px;
+      .info-item {
+        height: 32px;
+        background-color: rgba(68, 82, 213, 0.09411764705882353);
+        line-height: 32px;
+        border-radius: 16px;
+        position: relative;
+        padding-left: 135px;
+        margin-bottom: 10px;
+        font-size: 14px;
+        & > span:first-child {
+          display: inline-block;
+          height: 32px;
+          line-height: 32px;
+          position: absolute;
+          left: 0;
+          top: 0;
+          background-color: #4579ee;
+          color: #fff;
+          width: 120px;
+          text-align: center;
+          border-top-left-radius: 16px;
+          border-bottom-left-radius: 16px;
+        }
+      }
     }
     .project-action {
       display: flex;

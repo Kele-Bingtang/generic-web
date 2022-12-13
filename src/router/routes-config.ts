@@ -98,7 +98,7 @@ export const rolesRoutes: Array<RouteConfigAndMeta> = [
         meta: { title: "我的项目", icon: "el-icon-menu" },
       },
       {
-        path: "details/:projectName/:id",
+        path: "details/:projectName/:secretKey",
         name: "ProjectDetail",
         component: () => import("@/views/projects/project-detail.vue"),
         meta: { title: (route: Route) => route.params.projectName, hideInMenu: true },
