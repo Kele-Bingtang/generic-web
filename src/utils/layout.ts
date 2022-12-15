@@ -87,7 +87,7 @@ export const getTitle = (route: Route | RouteConfig | RouteRecord | Tag, vm: any
     route = handleRouteTitle(route as Route);
     // 进入 else 代表 route.meta 必定存在
     title = route.meta && route.meta.title;
-    __titleIsFunction__ = route.meta && route.meta.__titleIsFunction__ || false;
+    __titleIsFunction__ = (route.meta && route.meta.__titleIsFunction__) || false;
   }
   // name 如果有 $_noUseI18n_，代表不使用多语言 I18n
   let noUseI18n = route.name && route.name.startsWith("_noUseI18n_");
@@ -132,7 +132,7 @@ export const handleRouteTitle = (route: Route) => {
 /**
  * 刷新页面
  */
- export const refreshPage = (vm: Vue, target: "local" | "reload" = "local") => {
+export const refreshPage = (vm: Vue, target: "local" | "reload" = "local") => {
   if (target === "reload") {
     setTimeout(() => {
       window.location.reload();
@@ -174,3 +174,12 @@ let user: PartialKey<User, "age" | gender"> = {
 
  */
 export type PartialKey<T, U extends keyof T> = Pick<T, Exclude<keyof T, U>> & Partial<Pick<T, U>>;
+
+/**
+ * 指定的属性为必选，其他属性都变为可选
+ *
+ * 如 PartialExcludeKey<User, "name">
+ * 则只有 name 是必填，age 和 gender 变为可选
+ */
+export type RequiredKey<T, U extends keyof T> = Partial<Pick<T, Exclude<keyof T, U>>> & Required<Pick<T, U>>;
+

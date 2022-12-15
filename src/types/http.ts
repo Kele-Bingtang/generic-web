@@ -11,7 +11,7 @@ export interface Page {
 
 export interface Response<T> {
   code: number;
-  codeMessage: string; // success、fail、error
+  status: string; // success、fail、error ......
   message: string;
   data: T;
 }

@@ -24,21 +24,18 @@
     </div>
 
     <el-tabs v-model="activeName" type="card" addable @tab-click="clickTab" @tab-add="addTab" @tab-remove="removeTab">
-      <el-tab-pane
-        v-for="item in tabs"
-        :key="item.name"
-        :label="item.title"
-        :name="item.name"
-        :closable="item.closable"
-      >
+      <el-tab-pane v-for="item in tabs" :key="item.id" :label="item.title" :name="item.name" :closable="item.closable">
         <service-table :data="serviceData" />
       </el-tab-pane>
     </el-tabs>
 
     <el-dialog v-draggable-dialog title="创建目录" :visible.sync="dialogVisible" width="30%">
       <el-form ref="categoryForm" :model="categoryForm" :rules="getCategoryRules" label-width="80px">
-        <el-form-item label="目录名称" prop="category">
-          <el-input v-model="categoryForm.category" placeholder="请输入目录名称"></el-input>
+        <el-form-item label="目录编码" prop="categoryCode">
+          <el-input v-model="categoryForm.categoryCode" placeholder="请输入目录编码，且英文"></el-input>
+        </el-form-item>
+        <el-form-item label="目录名称" prop="categoryName">
+          <el-input v-model="categoryForm.categoryName" placeholder="请输入目录名称"></el-input>
         </el-form-item>
       </el-form>
       <span slot="footer" class="dialog-footer">
@@ -54,13 +51,22 @@ import { Form, TabPane } from "element-ui";
 import { Component, Vue } from "vue-property-decorator";
 import ServiceTable from "@/components/ServiceTable/index.vue";
 import { queryGenericServiceListPages, ServiceModule } from "@/api/service";
-import { queryCategoryList } from "@/api/category";
+import { deleteCategory, queryCategoryList, CategoryModule, insertCategory } from "@/api/category";
+import { refreshPage } from "@/utils/layout";
 
 export interface Tab {
+  id: number;
   title: string;
   name: string;
   closable: boolean;
 }
+
+export const defaultTabData: Tab = {
+  id: -1,
+  title: "默认目录",
+  name: "default",
+  closable: false,
+};
 
 @Component({
   components: { ServiceTable },
@@ -69,13 +75,15 @@ export default class ProjectDetail extends Vue {
   public activeName = "default";
   public dialogVisible = false;
   public serviceData: Array<ServiceModule.Service> = [];
-
+  public categoryList: Array<CategoryModule.Category> = [];
   public tabs: Array<Tab> = [];
   public categoryForm = {
-    category: "",
+    categoryCode: "",
+    categoryName: "",
   };
   public getCategoryRules = {
-    category: [{ required: true, message: "请输入目录名称", trigger: "change" }],
+    categoryCode: [{ required: true, message: "请输入目录名编码，且英文", trigger: "change" }],
+    categoryName: [{ required: true, message: "请输入目录名称", trigger: "change" }],
   };
 
   get url() {
@@ -95,20 +103,34 @@ export default class ProjectDetail extends Vue {
 
   public getCategory() {
     queryCategoryList().then(res => {
-      res.data.forEach((item, index) => {
-        let category = {
-          title: item.categoryName,
-          name: item.categoryCode,
-          closable: index === 0 ? false : true,
-        };
-        this.tabs.push(category);
-      });
-      if (this.tabs.length === 0) {
-        this.tabs.push({
-          title: "默认目录",
-          name: "default",
-          closable: false,
+      if (res.status === "success" && res.data.length > 0) {
+        this.tabs = [];
+        this.categoryList = res.data;
+        res.data.forEach((item, index) => {
+          let category = {
+            id: item.id,
+            title: item.categoryName,
+            name: item.categoryCode,
+            closable: index === 0 ? false : true,
+          };
+          this.tabs.push(category);
         });
+        if (this.tabs.length === 0) {
+          this.$message.error("获取目录信息失败");
+        } else if (this.tabs.length > 1 && this.tabs[0].name !== "default") {
+          // 确保默认目录在第一个
+          let defaultTab = undefined;
+          this.tabs.filter(item => {
+            if (item.name === defaultTabData.name) {
+              defaultTab = item;
+            } else {
+              return true;
+            }
+          });
+          defaultTab && this.tabs.unshift(defaultTab);
+        }
+      } else {
+        this.$message.error("获取目录信息失败");
       }
     });
   }
@@ -124,35 +146,71 @@ export default class ProjectDetail extends Vue {
     });
   }
 
-  public removeTab(targetName: string) {
-    let tabs = this.tabs;
-    let activeName = this.activeName;
-    if (activeName === targetName) {
-      tabs.forEach((tab, index) => {
-        if (tab.name === targetName) {
-          let nextTab = tabs[index + 1] || tabs[index - 1];
-          if (nextTab) {
-            activeName = nextTab.name;
-          }
-        }
-      });
-    }
-    this.activeName = activeName;
-    this.tabs = tabs.filter(tab => tab.name !== targetName);
-  }
-
   public addTabConfirm() {
     (this.$refs.categoryForm as Form).validate(valid => {
       if (valid) {
-        this.$notify({
-          title: "Success",
-          message: "新增成功",
-          type: "success",
-          duration: 3000,
+        // TODO：模拟 id 为 1
+        let categoryForm = { ...this.categoryForm, projectId: 1, createUser: 1, modifyUser: 1 };
+        insertCategory(categoryForm).then(res => {
+          if (res.status === "success") {
+            this.$notify({
+              title: "Success",
+              message: "新增成功",
+              type: "success",
+              duration: 3000,
+            });
+            // 刷新页面
+            refreshPage(this);
+          } else {
+            this.$notify({
+              title: "Error",
+              message: "新增失败，原因：" + res.message,
+              type: "error",
+              duration: 3000,
+            });
+          }
         });
       } else {
         return false;
       }
+    });
+  }
+
+  public removeTab(targetName: string) {
+    this.$confirm("此操作将永久删除该目录, 是否继续?", "提示", {
+      confirmButtonText: "确定",
+      cancelButtonText: "取消",
+      type: "warning",
+    }).then(() => {
+      let { tabs, activeName } = this;
+      let targetTab: Tab = { ...defaultTabData };
+      tabs.forEach(tab => {
+        if (tab.name === targetName) {
+          targetTab = tab;
+        }
+      });
+      if (targetTab && targetTab.id !== defaultTabData.id) {
+        deleteCategory({ id: targetTab.id }).then(res => {
+          if (res.status === "success") {
+            this.$notify({
+              title: "Success",
+              message: "删除成功",
+              type: "success",
+              duration: 3000,
+            });
+            // 刷新页面
+            // refreshPage(this);
+          }
+        });
+      } else {
+        this.$message.warning("删除失败，必须保留一个目录");
+      }
+      if (activeName === targetName) {
+        // 获取最后一个 tab
+        let lastTab = tabs.slice(-1)[0];
+        this.activeName = lastTab.name;
+      }
+      this.tabs = tabs.filter(tab => tab.name !== targetName);
     });
   }
 }
