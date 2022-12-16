@@ -1,5 +1,6 @@
 import request from "@/config/request";
 import { Condition, Page, Response } from "@/types/http";
+import { RequiredKey } from "@/utils/layout";
 
 export declare module ServiceModule {
   interface Service {
@@ -21,14 +22,19 @@ export declare module ServiceModule {
     categoryId: number;
   }
 
-  interface ServiceInsert {}
+  type ServiceInsert = Omit<Service, "id" | "createTime" | "modifyTime">;
 
-  interface ServiceUpdate {}
+  type ServiceUpdate = RequiredKey<
+    Omit<Service, "createUser" | "createTime" | "modifyTime" | "projectId" | "categoryId">,
+    "id"
+  >;
 
-  interface ServiceDelete {}
+  type ServiceDelete = RequiredKey<Service, "id">;
+
+  type ServiceSearch = Partial<Service>;
 }
 
-export const defaultServiceData: Partial<ServiceModule.Service >= {
+export const defaultServiceData: Partial<ServiceModule.Service> = {
   id: 0,
   serviceName: "",
   serviceUrl: "",
@@ -95,7 +101,9 @@ export const queryGenericServiceConditionsPages = (
   });
 };
 
-export const insertService = (service: ServiceModule.Service): Promise<Response<Array<ServiceModule.Service>>> => {
+export const insertService = (
+  service: ServiceModule.ServiceInsert
+): Promise<Response<Array<ServiceModule.Service>>> => {
   return request({
     url: "/genericService/insertGenericService",
     method: "post",
@@ -103,7 +111,9 @@ export const insertService = (service: ServiceModule.Service): Promise<Response<
   });
 };
 
-export const updateService = (service: any): Promise<Response<Array<ServiceModule.Service>>> => {
+export const updateService = (
+  service: ServiceModule.ServiceUpdate
+): Promise<Response<Array<ServiceModule.Service>>> => {
   return request({
     url: "/genericService/updateGenericService",
     method: "post",
@@ -111,7 +121,9 @@ export const updateService = (service: any): Promise<Response<Array<ServiceModul
   });
 };
 
-export const deleteService = (service: ServiceModule.Service): Promise<Response<Array<ServiceModule.Service>>> => {
+export const deleteService = (
+  service: ServiceModule.ServiceDelete
+): Promise<Response<Array<ServiceModule.Service>>> => {
   return request({
     url: "/genericService/deleteGenericServiceById",
     method: "post",

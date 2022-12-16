@@ -1,5 +1,6 @@
 import request from "@/config/request";
 import { Condition, Page, Response } from "@/types/http";
+import { RequiredKey } from "@/utils/layout";
 
 export declare module UserModule {
   interface User {
@@ -16,11 +17,13 @@ export declare module UserModule {
     modifyTime: string;
   }
 
-  interface UserInsert {}
+  type UserInsert = Omit<User, "id" | "registerTime" | "modifyTime">;
 
-  interface UserUpdate {}
+  type UserUpdate = RequiredKey<Omit<User, "registerTime" | "modifyTime">, "username">;
 
-  interface UserDelete {}
+  type UserDelete = RequiredKey<User, "username">;
+
+  type UserSearch = Partial<User>;
 }
 
 export const defaultUserData: Partial<UserModule.User> = {
@@ -98,7 +101,7 @@ export const queryGenericUserConditionsPages = (
   });
 };
 
-export const insertUser = (user: UserModule.User): Promise<Response<Array<UserModule.User>>> => {
+export const insertUser = (user: UserModule.UserInsert): Promise<Response<Array<UserModule.User>>> => {
   return request({
     url: "/genericUser/insertGenericUser",
     method: "post",
@@ -106,7 +109,7 @@ export const insertUser = (user: UserModule.User): Promise<Response<Array<UserMo
   });
 };
 
-export const updateUser = (user: any): Promise<Response<Array<UserModule.User>>> => {
+export const updateUser = (user: UserModule.UserUpdate): Promise<Response<Array<UserModule.User>>> => {
   return request({
     url: "/genericUser/updateGenericUser",
     method: "post",
@@ -114,7 +117,7 @@ export const updateUser = (user: any): Promise<Response<Array<UserModule.User>>>
   });
 };
 
-export const deleteUser = (user: UserModule.User): Promise<Response<Array<UserModule.User>>> => {
+export const deleteUser = (user: UserModule.UserDelete): Promise<Response<Array<UserModule.User>>> => {
   return request({
     url: "/genericUser/deleteGenericUserById",
     method: "post",

@@ -1,4 +1,6 @@
 import { UserModule } from "@/store/modules/user";
+import message from "@/utils/message";
+import notification from "@/utils/notification";
 import axios, { AxiosRequestConfig } from "axios";
 
 const cancelToken = axios.CancelToken;
@@ -29,9 +31,13 @@ service.interceptors.request.use(
 service.interceptors.response.use(
   response => {
     let res = response.data;
+     if (res.code !== 200 || res.status !== "success") {
+      notification.error(res.message);
+    }
     return res;
   },
   error => {
+    message.error(error.message);
     return Promise.reject(error);
   }
 );

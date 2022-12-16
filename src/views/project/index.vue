@@ -110,6 +110,7 @@ import {
   defaultProjectData,
 } from "@/api/project";
 import { UserModule } from "@/store/modules/user";
+import notification from "@/utils/notification";
 
 type Project = ProjectModule.Project;
 
@@ -162,23 +163,11 @@ export default class Projects extends Vue {
         project.createUser = UserModule.userInfo.userId;
         project.modifyUser = UserModule.userInfo.userId;
         insertProject(project as Project).then(res => {
-          if (res.codeMessage === "success") {
-            this.$notify({
-              title: "Success",
-              message: "新增成功",
-              type: "success",
-              duration: 3000,
-            });
+          if (res.status === "success") {
+            notification.success("新增成功！");
             this.$nextTick(() => {
               this.projectForm = { ...defaultProjectData };
               this.getProject();
-            });
-          } else {
-            this.$notify({
-              title: "Error",
-              message: "新增失败",
-              type: "error",
-              duration: 3000,
             });
           }
           this.dialogVisible = false;
@@ -209,23 +198,11 @@ export default class Projects extends Vue {
         project.createUser = UserModule.userInfo.userId;
         project.modifyUser = UserModule.userInfo.userId;
         updateProject(project as Project).then(res => {
-          if (res.codeMessage === "success") {
-            this.$notify({
-              title: "Success",
-              message: "更新成功",
-              type: "success",
-              duration: 3000,
-            });
+          if (res.status === "success") {
+            notification.success("更新成功！");
             this.$nextTick(() => {
               this.projectForm = { ...defaultProjectData };
               this.getProject();
-            });
-          } else {
-            this.$notify({
-              title: "Error",
-              message: "更新失败",
-              type: "error",
-              duration: 3000,
             });
           }
           this.dialogVisible = false;

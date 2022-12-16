@@ -1,5 +1,6 @@
 import request from "@/config/request";
 import { Condition, Response } from "@/types/http";
+import { RequiredKey } from "@/utils/layout";
 
 export declare module ReportModule {
   interface Report {
@@ -20,7 +21,9 @@ export declare module ReportModule {
     serviceId: number;
   }
 
-  interface ReportUpdate {}
+  type ReportUpdate = RequiredKey<Omit<Report, "createUser" | "createTime" | "modifyTime" | "serviceId">, "id">;
+
+  type ProjectSearch = Partial<Report>;
 }
 
 export const defaultReportData: Partial<ReportModule.Report> = {
@@ -67,7 +70,7 @@ export const queryReportList = (report: ReportModule.Report): Promise<Response<A
 //   });
 // };
 
-export const updateReport = (report: any): Promise<Response<Array<ReportModule.Report>>> => {
+export const updateReport = (report: ReportModule.ReportUpdate): Promise<Response<Array<ReportModule.Report>>> => {
   return request({
     url: "/genericReport/updateGenericReport",
     method: "post",

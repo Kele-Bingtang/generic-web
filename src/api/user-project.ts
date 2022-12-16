@@ -1,5 +1,6 @@
 import request from "@/config/request";
 import { Response } from "@/types/http";
+import { RequiredKey } from "@/utils/layout";
 
 export declare module UserProjectModule {
   interface UserProject {
@@ -10,11 +11,13 @@ export declare module UserProjectModule {
     modifyTime: string;
   }
 
-  interface UserProjectInsert {}
+  type UserProjectInsert = Omit<UserProject, "id" | "createTime" | "modifyTime">;
 
-  interface UserProjectUpdate {}
+  type UserProjectUpdate = RequiredKey<Omit<UserProject, "createTime" | "modifyTime">, "id">;
 
-  interface UserProjectDelete {}
+  type UserProjectDelete = RequiredKey<UserProject, "id">;
+
+  type UserProjectSearch = Partial<UserProject>;
 }
 
 export const defaultUserProjectData: Partial<UserProjectModule.UserProject> = {
@@ -45,7 +48,7 @@ export const queryUserProjectList = (): Promise<Response<Array<UserProjectModule
 };
 
 export const insertUserProject = (
-  userProject: UserProjectModule.UserProject
+  userProject: UserProjectModule.UserProjectInsert
 ): Promise<Response<Array<UserProjectModule.UserProject>>> => {
   return request({
     url: "/userProject/insertUserProject",
@@ -54,7 +57,9 @@ export const insertUserProject = (
   });
 };
 
-export const updateUserProject = (userProject: any): Promise<Response<Array<UserProjectModule.UserProject>>> => {
+export const updateUserProject = (
+  userProject: UserProjectModule.UserProjectUpdate
+): Promise<Response<Array<UserProjectModule.UserProject>>> => {
   return request({
     url: "/userProject/updateUserProject",
     method: "post",
@@ -63,7 +68,7 @@ export const updateUserProject = (userProject: any): Promise<Response<Array<User
 };
 
 export const deleteUserProject = (
-  userProject: UserProjectModule.UserProject
+  userProject: UserProjectModule.UserProjectDelete
 ): Promise<Response<Array<UserProjectModule.UserProject>>> => {
   return request({
     url: "/userProject/deleteUserProjectById",

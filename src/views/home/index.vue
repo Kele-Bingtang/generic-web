@@ -18,6 +18,7 @@
 import { Form } from "element-ui";
 import { Component, Vue } from "vue-property-decorator";
 import { UserModule } from "@/store/modules/user";
+import notification from "@/utils/notification";
 
 @Component({})
 export default class Home extends Vue {
@@ -33,19 +34,9 @@ export default class Home extends Vue {
   public submitForm() {
     (this.$refs.ruleForm as Form).validate(valid => {
       if (valid) {
-        UserModule.login({ ...this.ruleForm }).then(res => {
-          if (res) {
-            this.$notify({
-              title: "Success",
-              message: "登录成功",
-              type: "success",
-            });
-          } else {
-            this.$notify({
-              title: "Fail",
-              message: "用户名或密码错误",
-              type: "error",
-            });
+        UserModule.login({ ...this.ruleForm }).then(token => {
+          if (token) {
+            notification.success("登录成功！");
           }
         });
       }

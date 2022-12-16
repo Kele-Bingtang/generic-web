@@ -1,5 +1,6 @@
 import request from "@/config/request";
 import { Condition, Page, Response } from "@/types/http";
+import { RequiredKey } from "@/utils/layout";
 
 export declare module ProjectModule {
   interface Project {
@@ -15,11 +16,13 @@ export declare module ProjectModule {
     modifyTime?: string;
   }
 
-  interface ProjectInsert {}
+  type ProjectInsert = Omit<Project, "id" | "secretKey" | "createTime" | "modifyTime">;
 
-  interface ProjectUpdate{}
+  type ProjectUpdate = RequiredKey<Omit<Project, "secretKey" | "createUser" | "createTime" | "modifyTime">, "id">;
 
-  interface ProjectDelete {}
+  type ProjectDelete = RequiredKey<Project, "id">;
+
+  type ProjectSearch = Partial<Project>;
 }
 
 export const defaultProjectData: Partial<ProjectModule.Project> = {
@@ -31,7 +34,9 @@ export const defaultProjectData: Partial<ProjectModule.Project> = {
   databaseName: "",
 };
 
-export const queryGenericProjectByConditions = (condition: Array<Condition>): Promise<Response<Array<ProjectModule.Project>>> => {
+export const queryGenericProjectByConditions = (
+  condition: Array<Condition>
+): Promise<Response<Array<ProjectModule.Project>>> => {
   return request({
     url: "/genericProject/queryGenericProjectByConditions",
     method: "get",
@@ -47,7 +52,10 @@ export const queryProjectList = (project?: ProjectModule.Project): Promise<Respo
   });
 };
 
-export const queryGenericProjectListPages = (project?: ProjectModule.Project, page?: Page): Promise<Response<Array<ProjectModule.Project>>> => {
+export const queryGenericProjectListPages = (
+  project?: ProjectModule.Project,
+  page?: Page
+): Promise<Response<Array<ProjectModule.Project>>> => {
   return request({
     url: "/genericProject/queryGenericProjectListPages",
     method: "get",
@@ -72,7 +80,9 @@ export const queryGenericProjectConditionsPages = (
   });
 };
 
-export const insertProject = (project: ProjectModule.Project): Promise<Response<Array<ProjectModule.Project>>> => {
+export const insertProject = (
+  project: ProjectModule.ProjectInsert
+): Promise<Response<Array<ProjectModule.Project>>> => {
   return request({
     url: "/genericProject/insertGenericProject",
     method: "post",
@@ -80,7 +90,9 @@ export const insertProject = (project: ProjectModule.Project): Promise<Response<
   });
 };
 
-export const updateProject = (project: any): Promise<Response<Array<ProjectModule.Project>>> => {
+export const updateProject = (
+  project: ProjectModule.ProjectUpdate
+): Promise<Response<Array<ProjectModule.Project>>> => {
   return request({
     url: "/genericProject/updateGenericProject",
     method: "post",
@@ -88,7 +100,9 @@ export const updateProject = (project: any): Promise<Response<Array<ProjectModul
   });
 };
 
-export const deleteProject = (project: ProjectModule.Project): Promise<Response<Array<ProjectModule.Project>>> => {
+export const deleteProject = (
+  project: ProjectModule.ProjectDelete
+): Promise<Response<Array<ProjectModule.Project>>> => {
   return request({
     url: "/genericProject/deleteGenericProjectById",
     method: "post",

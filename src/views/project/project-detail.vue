@@ -25,7 +25,7 @@
 
     <el-tabs v-model="activeName" type="card" addable @tab-click="clickTab" @tab-add="addTab" @tab-remove="removeTab">
       <el-tab-pane v-for="item in tabs" :key="item.id" :label="item.title" :name="item.name" :closable="item.closable">
-        <service-table :data="serviceData" />
+        <service-table :data="serviceData" :category-code="item.name" />
       </el-tab-pane>
     </el-tabs>
 
@@ -49,7 +49,7 @@
 <script lang="ts">
 import { Form, TabPane } from "element-ui";
 import { Component, Vue } from "vue-property-decorator";
-import ServiceTable from "@/components/ServiceTable/index.vue";
+import ServiceTable from "@/views/service/index.vue";
 import { queryGenericServiceListPages, ServiceModule } from "@/api/service";
 import { deleteCategory, queryCategoryList, CategoryModule, insertCategory } from "@/api/category";
 import { refreshPage } from "@/utils/layout";

@@ -1,5 +1,6 @@
 import request from "@/config/request";
 import { Condition, Response } from "@/types/http";
+import { RequiredKey } from "@/utils/layout";
 
 export declare module ServiceColModule {
   interface ServiceCol {
@@ -29,11 +30,13 @@ export declare module ServiceColModule {
     serviceId: number;
   }
 
-  interface ServiceColInsert {}
+  type ServiceColInsert = Omit<ServiceCol, "id" | "createTime" | "modifyTime">;
 
-  interface ServiceColUpdate {}
+  type ServiceColUpdate = RequiredKey<Omit<ServiceCol, "createUser" | "createTime" | "modifyTime" | "serviceId">, "id">;
 
-  interface ServiceColDelete {}
+  type ServiceColDelete = RequiredKey<ServiceCol, "id">;
+
+  type ServiceColSearch = Partial<ServiceCol>;
 }
 
 export const defaultServiceColData: Partial<ServiceColModule.ServiceCol> = {
@@ -84,7 +87,7 @@ export const queryServiceColList = (
 };
 
 export const insertServiceCol = (
-  serviceCol: ServiceColModule.ServiceCol
+  serviceCol: ServiceColModule.ServiceColInsert
 ): Promise<Response<Array<ServiceColModule.ServiceCol>>> => {
   return request({
     url: "/serviceCol/insertServiceCol",
@@ -93,7 +96,9 @@ export const insertServiceCol = (
   });
 };
 
-export const updateServiceCol = (serviceCol: any): Promise<Response<Array<ServiceColModule.ServiceCol>>> => {
+export const updateServiceCol = (
+  serviceCol: ServiceColModule.ServiceColUpdate
+): Promise<Response<Array<ServiceColModule.ServiceCol>>> => {
   return request({
     url: "/serviceCol/updateServiceCol",
     method: "post",
@@ -102,7 +107,7 @@ export const updateServiceCol = (serviceCol: any): Promise<Response<Array<Servic
 };
 
 export const deleteServiceCol = (
-  serviceCol: ServiceColModule.ServiceCol
+  serviceCol: ServiceColModule.ServiceColDelete
 ): Promise<Response<Array<ServiceColModule.ServiceCol>>> => {
   return request({
     url: "/serviceCol/deleteServiceColById",
