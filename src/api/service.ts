@@ -8,21 +8,21 @@ export declare module ServiceModule {
     serviceName: string;
     serviceUrl: string;
     fullUrl: string;
-    status: number;
+    status: string;
     serviceDesc: string;
     serviceSql: string;
     updateTable: string;
     insertTable: string;
     deleteTable: string;
-    createUser: number;
+    createUser: string;
     createTime: string;
-    modifyUser: number;
+    modifyUser: string;
     modifyTime: string;
     projectId: number;
     categoryId: number;
   }
 
-  type ServiceInsert = Omit<Service, "id" | "createTime" | "modifyTime">;
+  type ServiceInsert = RequiredKey<Omit<Service, "id" | "createTime" | "modifyTime">, "serviceName" | "serviceUrl">;
 
   type ServiceUpdate = RequiredKey<
     Omit<Service, "createUser" | "createTime" | "modifyTime" | "projectId" | "categoryId">,
@@ -35,22 +35,16 @@ export declare module ServiceModule {
 }
 
 export const defaultServiceData: Partial<ServiceModule.Service> = {
-  id: 0,
+  id: -1,
   serviceName: "",
   serviceUrl: "",
   fullUrl: "",
-  status: 0,
+  status: "",
   serviceDesc: "",
   serviceSql: "",
   updateTable: "",
   insertTable: "",
   deleteTable: "",
-  createUser: 0,
-  createTime: "",
-  modifyUser: 0,
-  modifyTime: "",
-  projectId: 0,
-  categoryId: 0,
 };
 
 export const queryGenericServiceByConditions = (
@@ -64,7 +58,7 @@ export const queryGenericServiceByConditions = (
 };
 
 export const queryGenericServiceList = (
-  service?: ServiceModule.Service
+  service?: ServiceModule.ServiceSearch
 ): Promise<Response<Array<ServiceModule.Service>>> => {
   return request({
     url: "/genericService/queryGenericServiceList",
@@ -74,8 +68,8 @@ export const queryGenericServiceList = (
 };
 
 export const queryGenericServiceListPages = (
-  service?: ServiceModule.Service,
-  page?: Page
+  page?: Page,
+  service?: ServiceModule.ServiceSearch
 ): Promise<Response<Array<ServiceModule.Service>>> => {
   return request({
     url: "/genericService/queryGenericServiceListPages",

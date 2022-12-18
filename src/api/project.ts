@@ -10,10 +10,10 @@ export declare module ProjectModule {
     description: string;
     secretKey: string;
     databaseName: string;
-    createUser?: string;
-    createTime?: string;
-    modifyUser?: string;
-    modifyTime?: string;
+    createUser: string;
+    createTime: string;
+    modifyUser: string;
+    modifyTime: string;
   }
 
   type ProjectInsert = Omit<Project, "id" | "secretKey" | "createTime" | "modifyTime">;
@@ -26,7 +26,7 @@ export declare module ProjectModule {
 }
 
 export const defaultProjectData: Partial<ProjectModule.Project> = {
-  id: 0,
+  id: -1,
   projectName: "",
   baseUrl: "",
   description: "",
@@ -44,16 +44,18 @@ export const queryGenericProjectByConditions = (
   });
 };
 
-export const queryProjectList = (project?: ProjectModule.Project): Promise<Response<Array<ProjectModule.Project>>> => {
+export const queryProjectList = (
+  project?: ProjectModule.ProjectSearch
+): Promise<Response<Array<ProjectModule.Project>>> => {
   return request({
-    url: "/genericProject/queryGenericProjectList",
+    url: "/genericProject/queryGenericProjectListOwner",
     method: "get",
     params: { ...project },
   });
 };
 
 export const queryGenericProjectListPages = (
-  project?: ProjectModule.Project,
+  project?: ProjectModule.ProjectSearch,
   page?: Page
 ): Promise<Response<Array<ProjectModule.Project>>> => {
   return request({

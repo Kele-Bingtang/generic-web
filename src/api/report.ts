@@ -14,9 +14,9 @@ export declare module ReportModule {
     allowExport: number;
     pageSize: number;
     chartType: number;
-    createUser: number;
+    createUser: string;
     createTime: string;
-    modifyUser: number;
+    modifyUser: string;
     modifyTime: string;
     serviceId: number;
   }
@@ -37,11 +37,6 @@ export const defaultReportData: Partial<ReportModule.Report> = {
   allowExport: 0,
   pageSize: 0,
   chartType: 0,
-  createUser: 0,
-  createTime: "",
-  modifyUser: 0,
-  modifyTime: "",
-  serviceId: 0,
 };
 
 export const queryGenericReportByConditions = (
@@ -54,7 +49,7 @@ export const queryGenericReportByConditions = (
   });
 };
 
-export const queryReportList = (report: ReportModule.Report): Promise<Response<Array<ReportModule.Report>>> => {
+export const queryReportList = (report: ReportModule.ProjectSearch): Promise<Response<Array<ReportModule.Report>>> => {
   return request({
     url: "/genericReport/queryGenericReportList",
     method: "get",

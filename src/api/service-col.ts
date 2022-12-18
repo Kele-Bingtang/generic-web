@@ -25,7 +25,7 @@ export declare module ServiceColModule {
     colAlign: number;
     createUser: string;
     createTime: string;
-    modifyUser: number;
+    modifyUser: string;
     modifyTime: string;
     serviceId: number;
   }
@@ -59,11 +59,6 @@ export const defaultServiceColData: Partial<ServiceColModule.ServiceCol> = {
   reportColWidth: 0,
   detailColWidth: 0,
   colAlign: 0,
-  createUser: "",
-  createTime: "",
-  modifyUser: 0,
-  modifyTime: "",
-  serviceId: 0,
 };
 
 export const queryServiceColByConditions = (
@@ -77,7 +72,7 @@ export const queryServiceColByConditions = (
 };
 
 export const queryServiceColList = (
-  serviceCol: ServiceColModule.ServiceCol
+  serviceCol: ServiceColModule.ServiceColSearch
 ): Promise<Response<Array<ServiceColModule.ServiceCol>>> => {
   return request({
     url: "/serviceCol/queryServiceColList",

@@ -6,18 +6,9 @@ import { LayoutModule } from "./layout";
 import { loadRoutes } from "@/router/utils";
 import { rolesRoutes } from "@/router/routes-config";
 import router from "@/router";
-import { login, LoginInfo } from "@/api/user";
+import { defaultUserData, getUserInfo, login, LoginInfo, UserInfoModule } from "@/api/user";
 
-export interface UserInfo {
-  userId: string; // 用户 ID
-  userName: string; // 用户名
-  sex: string; // 用户性别
-  email?: string; // 用户邮箱
-  phone?: string; // 用户联系方式
-  avatar?: string; // 用户头像
-  roles: string[]; // 用户角色
-  registerTime?: string; // 用户角色
-}
+type UserInfo = UserInfoModule.User;
 
 export interface UserState {
   token: string; // 用户的认证 token
@@ -28,26 +19,17 @@ export interface UserState {
 @Module({ dynamic: true, store, name: "user", namespaced: true })
 class User extends VuexModule implements UserState {
   public token: string = getCacheToken() || "";
-  public userInfo: UserInfo = {
-    userId: "10001",
-    userName: "Visitor",
-    sex: "男",
-    email: "2456019588@qq.com",
-    phone: "13377492843",
-    avatar: "https://cdn.staticaly.com/gh/Kele-Bingtang/static@master/user/avatar1.png",
-    roles: ["visitor"],
-    registerTime: "2022-10-01 19:07:27",
-  };
+  public userInfo: UserInfo = { ...defaultUserData } as UserInfo;
   public roles: string[] = [];
 
   @Action
   public async login(loginInfo: LoginInfo) {
     let { username, password } = loginInfo;
     username = username.trim();
-    let { data } = await login({ username, password });
-    setCacheToken(data);
-    this.SET_TOKEN(data);
-    return data;
+    let { data: token } = await login({ username, password });
+    setCacheToken(token);
+    this.SET_TOKEN(token);
+    return token;
   }
 
   @Action
@@ -67,20 +49,20 @@ class User extends VuexModule implements UserState {
 
   @Action
   public async getUserInfo() {
-    let userInfo: UserInfo = {
-      userId: "10001",
-      userName: "Visitor",
-      sex: "男",
-      email: "2456019588@qq.com",
-      phone: "13377492843",
-      avatar: "https://cdn.staticaly.com/gh/Kele-Bingtang/static@master/user/avatar1.png",
-      roles: ["visitor"],
-      registerTime: "2022-10-01 19:07:27",
-    };
-    let roles: string[] = userInfo.roles || ["admin"];
-    this.SET_ROLES(roles);
-    this.setUserInfo(userInfo);
-    return roles;
+    let { token } = this;
+    if (token) {
+      let res = await getUserInfo(token);
+      if (res.status === "success") {
+        this.setUserInfo(res.data);
+        let roles = ["admin"];
+        this.SET_ROLES(roles);
+        return roles;
+      } else {
+        return ["visitor"];
+      }
+    } else {
+      return ["visitor"];
+    }
   }
 
   @Action

@@ -195,8 +195,7 @@ class Layout extends VuexModule implements LayoutState {
     let { userInfo, token, roles } = UserModule;
     let log: ErrorLog = {
       ...errorLog,
-      userId: userInfo.userId,
-      userName: userInfo.userName,
+      userName: userInfo.username,
       token,
       roles,
       time: new Date().getTime(),

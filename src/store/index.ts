@@ -1,5 +1,6 @@
 import Vue from "vue";
 import Vuex from "vuex";
+import { DataState } from "./modules/data";
 import { LayoutState } from "./modules/layout";
 import { PermissionState } from "./modules/permission";
 import { SettingsState } from "./modules/settings";
@@ -12,6 +13,7 @@ export interface IStoreState {
   permission: PermissionState;
   settings: SettingsState;
   user: UserState;
+  data: DataState;
 }
 
 export default new Vuex.Store<IStoreState>({});

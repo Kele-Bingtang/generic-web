@@ -3,6 +3,7 @@
     <div class="search-container">
       <div class="search-content">
         <el-input v-model="searchParams.serviceName" placeholder="接口名称" style="width: 200px" />
+        <el-input v-model="searchParams.serviceUrl" placeholder="接口地址" style="width: 200px; margin-left: 10px" />
         <el-button
           v-waves
           type="primary"
@@ -35,20 +36,44 @@
         <el-table-column type="selection" width="55"></el-table-column>
         <el-table-column prop="serviceName" label="接口名称" width="180px"></el-table-column>
         <el-table-column prop="reportTitle" label="报表名称" width="180px"></el-table-column>
-        <el-table-column prop="status" label="接口状态" width="150px"></el-table-column>
-        <el-table-column prop="serviceUrl" label="接口地址"></el-table-column>
+        <el-table-column prop="status" label="接口状态" width="100px">
+          <template slot-scope="{ row }">
+            <el-tag :type="filterStatusTagType(row.status)">{{ row.status }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="serviceUrl" label="接口地址">
+          <template slot-scope="{ row }">
+            <el-tooltip effect="dark" content="复制接口相对地址" placement="top">
+              <el-tag type="info" v-clipboard:copy="row.serviceUrl" v-clipboard:success="onSuccess">
+                {{ row.serviceUrl }}
+                <i class="el-icon-document-copy"></i>
+              </el-tag>
+            </el-tooltip>
+          </template>
+        </el-table-column>
         <el-table-column prop="serviceDesc" label="接口描述"></el-table-column>
         <el-table-column prop="createTime" label="创建时间"></el-table-column>
 
-        <el-table-column label="操作" width="200px">
-          <template slot-scope="{ row, $index }">
-            <el-button type="text" icon="el-icon-search" @click="handleLookService(row)" class="btn-info">
+        <el-table-column label="操作" width="240px">
+          <template slot-scope="{ row }">
+            <el-button type="text" icon="el-icon-search" @click="handleReadService(row)" class="btn-info">
               查看
             </el-button>
             <el-button type="text" icon="el-icon-edit" @click="handleEditService(row)">编辑</el-button>
-            <el-button type="text" icon="el-icon-delete" @click="handleDeleteService(row, $index)" class="btn-danger">
+            <el-button type="text" icon="el-icon-delete" @click="handleDeleteService(row)" class="btn-danger">
               删除
             </el-button>
+            <el-dropdown @command="command => handleCommand(command, row)">
+              <span>
+                <i class="el-icon-d-arrow-right"></i>
+                更多
+              </span>
+              <el-dropdown-menu slot="dropdown">
+                <el-dropdown-item command="handleCopyFullUrl" icon="el-icon-document-copy">
+                  复制完整链接
+                </el-dropdown-item>
+              </el-dropdown-menu>
+            </el-dropdown>
           </template>
         </el-table-column>
       </el-table>
@@ -62,7 +87,7 @@
     </template>
     <template v-else>
       <el-empty>
-        <el-button icon="el-icon-plus">创建接口</el-button>
+        <el-button v-waves icon="el-icon-plus" @click="handleAddService()">创建接口</el-button>
       </el-empty>
     </template>
 
@@ -76,6 +101,7 @@
       <service-form
         :data="operateRow"
         :status="operateStatus"
+        :base-url="url"
         @confirm="handleConfirmAdd"
         @cancel="serviceDrawer.visible = false"
       ></service-form>
@@ -86,36 +112,46 @@
 <script lang="ts">
 import { Component, Prop, Vue } from "vue-property-decorator";
 import Pagination, { Paging, paging } from "@/components/Pagination/index.vue";
-import { defaultServiceData, deleteService, ServiceModule } from "@/api/service";
+import {
+  defaultServiceData,
+  deleteService,
+  insertService,
+  queryGenericServiceListPages,
+  ServiceModule,
+  updateService,
+} from "@/api/service";
 import constant from "@/config/constant";
 import DragDrawer from "@/components/DragDrawer/index.vue";
 import ServiceForm from "./components/service-form.vue";
 import notification from "@/utils/notification";
+import { refreshPage } from "@/utils/layout";
+import { DataModule } from "@/store/modules/data";
+import { UserModule } from "@/store/modules/user";
+import message from "@/utils/message";
 
 type Service = ServiceModule.Service;
-
 type ServiceInsert = ServiceModule.ServiceInsert;
+type ServiceUpdate = ServiceModule.ServiceUpdate;
 
 @Component({
   components: { Pagination, DragDrawer, ServiceForm },
 })
 export default class ServiceTable extends Vue {
   @Prop({ required: true })
-  public data!: Array<Service>;
-  @Prop({ required: true })
-  public categoryCode!: string;
+  public categoryId!: string;
 
-  public row!: any;
-  public $index!: any;
+  public row!: Service;
 
   public tableKey = 0;
   public showAddress = false;
   public loading = true;
   public paging = paging;
+  public serviceData: Array<Service> = [];
   public searchParams = {
     serviceName: "",
+    serviceUrl: "",
   };
-  public statusOptions = constant.statusOptions;
+  public statusOptions = constant.serviceStatusOptions;
   public operateStatus = "";
   public rules = {
     date: [{ required: true, message: "date is required", trigger: "change" }],
@@ -124,7 +160,6 @@ export default class ServiceTable extends Vue {
   };
   public operateRow = { ...defaultServiceData };
 
-  public serviceData: Array<Service> = [];
   public serviceDrawer = {
     visible: false,
     placement: "right",
@@ -133,31 +168,61 @@ export default class ServiceTable extends Vue {
     withHeader: false,
   };
 
+  get url() {
+    return window.location.origin + this.$route.query.baseUrl;
+  }
+
   mounted() {
-    this.serviceData = { ...this.data };
     this.loading = false;
+    this.initServiceList();
+  }
+
+  public initServiceList() {
+    let { project, category } = DataModule;
+    let isSuccess = queryGenericServiceListPages(
+      { pageNo: 1, pageSize: 20 },
+      { projectId: project.id, categoryId: this.categoryId }
+    ).then(res => {
+      if (res.status === "success") {
+        this.serviceData = res.data;
+        return true;
+      } else {
+        return false;
+      }
+    });
+    return isSuccess;
+  }
+
+  public filterStatusTagType(status: string) {
+    return constant.serviceStatusType[status];
+  }
+  public onSuccess() {
+    message.success("复制成功！");
   }
 
   // 应该将参数 searchParams 传到后台，这里演示本地数据查询
   public handleSearchService() {
     this.loading = true;
-    this.serviceData = { ...this.data };
-    if (this.searchParams.serviceName === "") {
+    let { serviceName, serviceUrl } = this.searchParams;
+    if (serviceName === "" && serviceUrl === "") {
       this.loading = false;
+      this.initServiceList();
       return;
     }
-    let serviceData = [...this.serviceData];
-    if (this.searchParams.serviceName) {
-      serviceData = this.serviceData.filter(item => {
-        return item.serviceName.indexOf(this.searchParams.serviceName) !== -1;
-      });
-    }
-    this.serviceData = serviceData;
+    queryGenericServiceListPages({ pageNo: 1, pageSize: 20 }, { serviceName, serviceUrl }).then(res => {
+      if (res.status === "success") {
+        this.serviceData = res.data;
+      }
+    });
     this.loading = false;
   }
 
   public handleReset() {
-    console.log("通过 " + this.categoryCode + " 查询加载表格");
+    this.initServiceList().then(isSuccess => {
+      if (isSuccess) {
+        notification.success("重置成功！");
+      }
+    });
   }
 
   public handleAddService() {
@@ -166,9 +231,9 @@ export default class ServiceTable extends Vue {
     this.serviceDrawer.visible = true;
   }
 
-  public handleLookService(row: Service) {
+  public handleReadService(row: Service) {
     this.operateRow = Object.assign({}, row);
-    this.operateStatus = "look";
+    this.operateStatus = "read";
     this.serviceDrawer.visible = true;
   }
 
@@ -178,36 +243,74 @@ export default class ServiceTable extends Vue {
     this.serviceDrawer.visible = true;
   }
 
-  public handleConfirmAdd(form: ServiceInsert, status: string) {
+  public handleConfirmAdd(form: Service, status: string) {
+    let data: Partial<Service> = { ...form };
+    let { username } = UserModule.userInfo;
     if (status === "add") {
-      this.addServiceData(form);
+      // 删除 Insert 时不允许的数据
+      delete data.id;
+      delete data.createTime;
+      delete data.modifyTime;
+      // 添加 Insert 时需要的其他数据
+      data.fullUrl = this.url + data.serviceUrl;
+      data.projectId = DataModule.project.id;
+      data.categoryId = DataModule.category.id;
+      data.createUser = username;
+      data.modifyUser = username;
+      this.addServiceData(data as ServiceInsert);
     } else if (status === "edit") {
-      this.editServiceData(form);
+      // 删除 Update 时不允许的数据
+      delete data.createUser;
+      delete data.createTime;
+      delete data.modifyTime;
+      delete data.projectId;
+      delete data.categoryId;
+      data.modifyUser = username;
+      // 添加 Update 时需要的其他数据
+      this.editServiceData(data as ServiceUpdate);
     }
   }
 
   public addServiceData(form: ServiceInsert) {
-    console.log("add");
-    console.log(form);
+    insertService(form).then(res => {
+      if (res.status === "success") {
+        notification.success("添加接口成功！");
+        refreshPage(this);
+      }
+    });
   }
 
-  public editServiceData(form: ServiceInsert) {
-    console.log("edit");
-    console.log(form);
+  public editServiceData(form: ServiceUpdate) {
+    updateService(form).then(res => {
+      if (res.status === "success") {
+        notification.success("更新接口成功！");
+        refreshPage(this);
+      }
+    });
   }
 
-  public handleDeleteService(row: Service, index: number) {
+  public handleDeleteService(row: Service) {
     this.$confirm("此操作将永久删除该数据, 是否继续?", "提示", {
       confirmButtonText: "确定",
       cancelButtonText: "取消",
       type: "warning",
     })
       .then(() => {
-        this.serviceData.splice(index, 1);
-        // deleteService()
-        notification.success("删除成功！");
+        deleteService(row).then(res => {
+          if (res.status === "success") {
+            notification.success("删除成功！");
+          }
+        });
       })
       .catch(() => {});
+  }
+
+  public handleCommand(command: string, row: Service) {
+    if (command === "handleCopyFullUrl") {
+      this.$copyText(row.fullUrl).then(() => {
+        this.onSuccess();
+      });
+    }
   }
 
   public handleSizeChange(paging: Paging) {

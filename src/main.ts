@@ -11,8 +11,11 @@ import "@/styles/element-variables.scss";
 import { LayoutModule } from "@/store/modules/layout";
 import "@/utils/error-log";
 import * as directives from "@/directives";
+import VueClipBoard from 'vue-clipboard2'
 
 Vue.config.productionTip = false;
+
+Vue.use(VueClipBoard)
 
 Vue.use(ElementUI, {
   i18n: (key: any, value: any) => i18n.t(key, value),

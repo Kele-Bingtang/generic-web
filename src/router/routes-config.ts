@@ -99,8 +99,8 @@ export const rolesRoutes: Array<RouteConfigAndMeta> = [
       },
       {
         path: "details/:projectName/:secretKey",
-        name: "ProjectDetail",
-        component: () => import("@/views/project/project-detail.vue"),
+        name: "Category",
+        component: () => import("@/views/category/index.vue"),
         meta: { title: (route: Route) => route.params.projectName, hideInMenu: true },
       },
     ],

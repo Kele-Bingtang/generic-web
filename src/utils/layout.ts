@@ -56,11 +56,11 @@ export const setTitle = (route: Route, vm: any) => {
   if (titleMode === "0") {
     resTitle = pageTitle ? `${title} - ${pageTitle}` : title;
   } else if (titleMode === "1") {
-    const { userName } = UserModule.userInfo;
-    if (userName && pageTitle) {
-      resTitle = `${userName} - ${pageTitle}`;
-    } else if (userName) {
-      resTitle = `${title} - ${userName}`;
+    const { username } = UserModule.userInfo;
+    if (username && pageTitle) {
+      resTitle = `${username} - ${pageTitle}`;
+    } else if (username) {
+      resTitle = `${title} - ${username}`;
     } else if (pageTitle) {
       resTitle = resTitle;
     } else {

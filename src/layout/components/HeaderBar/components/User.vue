@@ -7,7 +7,7 @@
             <el-image :src="require('@/assets/default.png')" class="user-avatar" alt="头像" />
           </div>
         </el-image>
-        <span class="username">{{ user.userName }}</span>
+        <span class="username">{{ user.username }}</span>
         <i class="el-icon-caret-bottom" />
       </div>
       <el-dropdown-menu slot="dropdown" class="user-dropdown">

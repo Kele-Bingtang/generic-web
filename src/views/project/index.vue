@@ -111,6 +111,8 @@ import {
 } from "@/api/project";
 import { UserModule } from "@/store/modules/user";
 import notification from "@/utils/notification";
+import { DataModule } from "@/store/modules/data";
+import { refreshPage } from "@/utils/layout";
 
 type Project = ProjectModule.Project;
 
@@ -137,10 +139,10 @@ export default class Projects extends Vue {
   };
 
   mounted() {
-    this.getProject();
+    this.initProject();
   }
 
-  public getProject() {
+  public initProject() {
     queryProjectList().then(res => {
       this.projectList = res.data;
     });
@@ -160,15 +162,12 @@ export default class Projects extends Vue {
         let project = {
           ...this.projectForm,
         };
-        project.createUser = UserModule.userInfo.userId;
-        project.modifyUser = UserModule.userInfo.userId;
+        project.createUser = UserModule.userInfo.username;
+        project.modifyUser = UserModule.userInfo.username;
         insertProject(project as Project).then(res => {
           if (res.status === "success") {
             notification.success("新增成功！");
-            this.$nextTick(() => {
-              this.projectForm = { ...defaultProjectData };
-              this.getProject();
-            });
+            refreshPage(this);
           }
           this.dialogVisible = false;
         });
@@ -183,7 +182,7 @@ export default class Projects extends Vue {
     this.operatorType = "edit";
     let { id, projectName, baseUrl, description, databaseName } = project;
     this.projectForm = { id, projectName, baseUrl, description, databaseName };
-    this.projectForm.modifyUser = UserModule.userInfo.userId;
+    this.projectForm.modifyUser = UserModule.userInfo.username;
     this.$nextTick(() => {
       (this.$refs.projectForm as Form).clearValidate();
     });
@@ -195,15 +194,12 @@ export default class Projects extends Vue {
         let project = {
           ...this.projectForm,
         };
-        project.createUser = UserModule.userInfo.userId;
-        project.modifyUser = UserModule.userInfo.userId;
+        project.createUser = UserModule.userInfo.username;
+        project.modifyUser = UserModule.userInfo.username;
         updateProject(project as Project).then(res => {
           if (res.status === "success") {
             notification.success("更新成功！");
-            this.$nextTick(() => {
-              this.projectForm = { ...defaultProjectData };
-              this.getProject();
-            });
+            refreshPage(this);
           }
           this.dialogVisible = false;
         });
@@ -216,6 +212,7 @@ export default class Projects extends Vue {
   public handleHeaderClick(project: Project) {
     let { id, projectName, secretKey, baseUrl } = project;
     if (id) {
+      DataModule.updateProject(project);
       this.$router.push({
         path: `/project/details/${projectName}/${secretKey}`,
         query: {
@@ -234,20 +231,8 @@ export default class Projects extends Vue {
       .then(() => {
         deleteProject(project).then(res => {
           if (res.data) {
-            this.$nextTick(() => {
-              this.getProject();
-            });
-            this.$notify({
-              title: "Success",
-              type: "success",
-              message: "删除成功!",
-            });
-          } else {
-            this.$notify({
-              title: "Error",
-              type: "error",
-              message: "删除失败!",
-            });
+            notification.success("删除成功！")
+            refreshPage(this);
           }
         });
       })

@@ -7,9 +7,9 @@ export declare module CategoryModule {
     id: number;
     categoryCode: string;
     categoryName: string;
-    createUser: number;
+    createUser: string;
     createTime: string;
-    modifyUser: number;
+    modifyUser: string;
     modifyTime: string;
     projectId: number;
   }
@@ -51,8 +51,8 @@ export const queryCategoryList = (
 };
 
 export const queryCategoryListPages = (
-  category?: CategoryModule.CategorySearch,
-  page?: Page
+  page?: Page,
+  category?: CategoryModule.CategorySearch
 ): Promise<Response<Array<CategoryModule.Category>>> => {
   return request({
     url: "/genericCategory/queryGenericCategoryConditionsPages",

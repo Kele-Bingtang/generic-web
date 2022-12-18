@@ -1,25 +1,27 @@
-const statusOptions = [
+const serviceStatusOptions = [
   {
-    value: "Enable",
-    label: "Enable",
+    value: "0",
+    label: "开启",
   },
   {
-    value: "Disable",
-    label: "Disable",
-  },
-  {
-    value: "Deleted",
-    label: "Deleted",
+    value: "1",
+    label: "关闭",
   },
 ];
 
+const serviceStatusType: { [propName: string]: string } = {
+  启用: "success",
+  关闭: "warning"
+}
+
 const operateTitle: { [propName: string]: string } = {
-  look: "查看",
+  read: "查看",
   edit: "编辑",
   add: "创建",
 };
 
 export default {
-  statusOptions,
+  serviceStatusOptions,
+  serviceStatusType,
   operateTitle,
 };
