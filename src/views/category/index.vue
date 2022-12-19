@@ -1,22 +1,30 @@
 <template>
-  <div class="project-detail-container">
-    <div class="project-detail-info">
+  <div class="category-container">
+    <div class="category-info">
       <el-row :gutter="10" style="height: 100%">
         <el-col :span="18" style="height: 100%; border-right: 1px solid #f0f0f0">
           <div class="project-info">
             <div class="info-item">
               <span>接口地址</span>
               <span>{{ url }}</span>
+              <i class="el-icon-document-copy copy-icon" v-clipboard:copy="url" v-clipboard:success="onSuccess"></i>
             </div>
             <div class="info-item">
               <span>项目密钥</span>
               <span>{{ projectSecretKey }}</span>
+              <i
+                class="el-icon-document-copy copy-icon"
+                v-clipboard:copy="projectSecretKey"
+                v-clipboard:success="onSuccess"
+              ></i>
             </div>
           </div>
         </el-col>
         <el-col :span="4" style="height: 100%">
           <div class="project-action">
-            <el-button v-waves plain type="primary" icon="el-icon-user-solid">项目成员</el-button>
+            <el-button v-waves plain type="primary" icon="el-icon-user-solid" @click="handleEnterMember">
+              项目成员
+            </el-button>
             <el-button v-waves plain type="danger" icon="el-icon-caret-right">退出项目</el-button>
           </div>
         </el-col>
@@ -66,14 +74,14 @@ import { DataModule } from "@/store/modules/data";
 import { queryProjectList } from "@/api/project";
 import { UserModule } from "@/store/modules/user";
 
-export interface Tab {
+export interface CategoryTab {
   id: number;
   title: string;
   name: string;
   closable: boolean;
 }
 
-export const defaultTabData: Tab = {
+export const defaultTabData: CategoryTab = {
   id: -1,
   title: "默认目录",
   name: "default",
@@ -83,12 +91,12 @@ export const defaultTabData: Tab = {
 @Component({
   components: { ServiceTable },
 })
-export default class ProjectDetail extends Vue {
+export default class GenericCategory extends Vue {
   public activeName = "default";
   public dialogVisible = false;
   public serviceData: Array<ServiceModule.Service> = [];
   public categoryList: Array<CategoryModule.Category> = [];
-  public tabs: Array<Tab> = [];
+  public tabs: Array<CategoryTab> = [];
   public categoryForm = {
     categoryCode: "",
     categoryName: "",
@@ -193,7 +201,7 @@ export default class ProjectDetail extends Vue {
       type: "warning",
     }).then(() => {
       let { tabs, activeName } = this;
-      let targetTab: Tab = { ...defaultTabData };
+      let targetTab = { ...defaultTabData };
       tabs.forEach(tab => {
         if (tab.name === targetName) {
           targetTab = tab;
@@ -216,13 +224,21 @@ export default class ProjectDetail extends Vue {
       this.tabs = tabs.filter(tab => tab.name !== targetName);
     });
   }
+
+  public handleEnterMember() {
+    this.$router.push(`/project/member/${this.projectSecretKey}`);
+  }
+
+  public onSuccess() {
+    message.success("复制成功！");
+  }
 }
 </script>
 
 <style lang="scss" scoped>
-.project-detail-container {
+.category-container {
   padding: 20px;
-  .project-detail-info {
+  .category-info {
     height: 130px;
     .project-info {
       padding: 20px;
@@ -248,6 +264,12 @@ export default class ProjectDetail extends Vue {
           text-align: center;
           border-top-left-radius: 16px;
           border-bottom-left-radius: 16px;
+        }
+        .copy-icon {
+          position: absolute;
+          right: 10px;
+          line-height: inherit;
+          cursor: pointer;
         }
       }
     }

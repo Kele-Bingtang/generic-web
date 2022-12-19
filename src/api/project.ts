@@ -16,6 +16,16 @@ export declare module ProjectModule {
     modifyTime: string;
   }
 
+  interface UserProject {
+    id: number;
+    userId: number;
+    projectId: number;
+    roleId: number;
+    enterType: number;
+    createTime: string;
+    modifyTime: string;
+  }
+
   type ProjectInsert = Omit<Project, "id" | "secretKey" | "createTime" | "modifyTime">;
 
   type ProjectUpdate = RequiredKey<Omit<Project, "secretKey" | "createUser" | "createTime" | "modifyTime">, "id">;
@@ -23,6 +33,8 @@ export declare module ProjectModule {
   type ProjectDelete = RequiredKey<Project, "id">;
 
   type ProjectSearch = Partial<Project>;
+
+  type UserProjectSearch = Partial<UserProject>
 }
 
 export const defaultProjectData: Partial<ProjectModule.Project> = {
@@ -34,13 +46,23 @@ export const defaultProjectData: Partial<ProjectModule.Project> = {
   databaseName: "",
 };
 
-export const queryGenericProjectByConditions = (
+export const queryProjectByConditions = (
   condition: Array<Condition>
 ): Promise<Response<Array<ProjectModule.Project>>> => {
   return request({
     url: "/genericProject/queryGenericProjectByConditions",
     method: "get",
     data: condition,
+  });
+};
+
+export const queryProjectListOwner = (
+  project?: ProjectModule.UserProjectSearch
+): Promise<Response<Array<ProjectModule.Project>>> => {
+  return request({
+    url: "/genericProject/queryGenericProjectListOwner",
+    method: "get",
+    params: { ...project },
   });
 };
 
@@ -54,7 +76,7 @@ export const queryProjectList = (
   });
 };
 
-export const queryGenericProjectListPages = (
+export const queryProjectListPages = (
   project?: ProjectModule.ProjectSearch,
   page?: Page
 ): Promise<Response<Array<ProjectModule.Project>>> => {
@@ -68,7 +90,7 @@ export const queryGenericProjectListPages = (
   });
 };
 
-export const queryGenericProjectConditionsPages = (
+export const queryProjectConditionsPages = (
   condition: Array<Condition>,
   page?: Page
 ): Promise<Response<Array<ProjectModule.Project>>> => {

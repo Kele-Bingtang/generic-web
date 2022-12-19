@@ -30,7 +30,7 @@ export const defaultCategoryData: Partial<CategoryModule.Category> = {
   projectId: 0,
 };
 
-export const queryGenericProjectByConditions = (
+export const queryProjectByConditions = (
   condition: Array<Condition>
 ): Promise<Response<Array<CategoryModule.Category>>> => {
   return request({
@@ -50,7 +50,7 @@ export const queryCategoryList = (
   });
 };
 
-export const queryCategoryListPages = (
+export const queryListPages = (
   page?: Page,
   category?: CategoryModule.CategorySearch
 ): Promise<Response<Array<CategoryModule.Category>>> => {
@@ -64,7 +64,7 @@ export const queryCategoryListPages = (
   });
 };
 
-export const queryGenericCategoryConditionsPages = (
+export const queryCategoryConditionsPages = (
   condition: Array<Condition>,
   page?: Page
 ): Promise<Response<Array<CategoryModule.Category>>> => {

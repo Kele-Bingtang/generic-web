@@ -1,5 +1,5 @@
 <template>
-  <div class="catalog-table-component">
+  <div class="service-container">
     <div class="search-container">
       <div class="search-content">
         <el-input v-model="searchParams.serviceName" placeholder="接口名称" style="width: 200px" />
@@ -64,7 +64,7 @@
               删除
             </el-button>
             <el-dropdown @command="command => handleCommand(command, row)">
-              <span>
+              <span style="margin-left: 5px">
                 <i class="el-icon-d-arrow-right"></i>
                 更多
               </span>
@@ -116,13 +116,13 @@ import {
   defaultServiceData,
   deleteService,
   insertService,
-  queryGenericServiceListPages,
+  queryServiceListPages,
   ServiceModule,
   updateService,
 } from "@/api/service";
 import constant from "@/config/constant";
 import DragDrawer from "@/components/DragDrawer/index.vue";
-import ServiceForm from "./components/service-form.vue";
+import ServiceForm from "./components/ServiceForm.vue";
 import notification from "@/utils/notification";
 import { refreshPage } from "@/utils/layout";
 import { DataModule } from "@/store/modules/data";
@@ -136,9 +136,9 @@ type ServiceUpdate = ServiceModule.ServiceUpdate;
 @Component({
   components: { Pagination, DragDrawer, ServiceForm },
 })
-export default class ServiceTable extends Vue {
+export default class GenericService extends Vue {
   @Prop({ required: true })
-  public categoryId!: string;
+  public categoryId!: number;
 
   public row!: Service;
 
@@ -178,8 +178,8 @@ export default class ServiceTable extends Vue {
   }
 
   public initServiceList() {
-    let { project, category } = DataModule;
-    let isSuccess = queryGenericServiceListPages(
+    let { project } = DataModule;
+    let isSuccess = queryServiceListPages(
       { pageNo: 1, pageSize: 20 },
       { projectId: project.id, categoryId: this.categoryId }
     ).then(res => {
@@ -209,7 +209,7 @@ export default class ServiceTable extends Vue {
       this.initServiceList();
       return;
     }
-    queryGenericServiceListPages({ pageNo: 1, pageSize: 20 }, { serviceName, serviceUrl }).then(res => {
+    queryServiceListPages({ pageNo: 1, pageSize: 20 }, { serviceName, serviceUrl }).then(res => {
       if (res.status === "success") {
         this.serviceData = res.data;
       }
@@ -321,7 +321,7 @@ export default class ServiceTable extends Vue {
 </script>
 
 <style lang="scss" scoped>
-.catalog-table-component {
+.service-container {
   .search-container {
     margin-bottom: 10px;
   }

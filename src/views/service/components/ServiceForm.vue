@@ -88,7 +88,7 @@ export default class ServiceForm extends Vue {
   }
 
   public handleSelectStatus(selectValue: string) {
-    this.serviceForm.status = Number(selectValue);
+    this.serviceForm.status = selectValue;
   }
 
   public handleConfirmSave() {

@@ -39,7 +39,7 @@ export const defaultReportData: Partial<ReportModule.Report> = {
   chartType: 0,
 };
 
-export const queryGenericReportByConditions = (
+export const queryReportByConditions = (
   condition: Array<Condition>
 ): Promise<Response<Array<ReportModule.Report>>> => {
   return request({

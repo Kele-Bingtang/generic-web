@@ -63,9 +63,7 @@ export const getUserInfo = (token: string): Promise<Response<UserInfoModule.User
   });
 };
 
-export const queryGenericProjectByConditions = (
-  condition: Array<Condition>
-): Promise<Response<Array<UserInfoModule.User>>> => {
+export const queryUserByConditions = (condition: Array<Condition>): Promise<Response<Array<UserInfoModule.User>>> => {
   return request({
     url: "/genericUser/queryGenericUserByConditions",
     method: "get",
@@ -81,7 +79,7 @@ export const queryUserList = (user?: UserInfoModule.UserSearch): Promise<Respons
   });
 };
 
-export const queryGenericUserListPages = (
+export const queryUserListPages = (
   page?: Page,
   user?: UserInfoModule.UserSearch
 ): Promise<Response<Array<UserInfoModule.User>>> => {
@@ -95,7 +93,7 @@ export const queryGenericUserListPages = (
   });
 };
 
-export const queryGenericUserConditionsPages = (
+export const queryUserConditionsPages = (
   condition: Array<Condition>,
   page?: Page
 ): Promise<Response<Array<UserInfoModule.User>>> => {
@@ -106,6 +104,20 @@ export const queryGenericUserConditionsPages = (
       ...page,
     },
     data: condition,
+  });
+};
+
+export const queryMemberInProject = (
+  secretKey: string,
+  page?: Page
+): Promise<Response<Array<Omit<UserInfoModule.User, "id" | "password">>>> => {
+  return request({
+    url: "/genericUser/queryGenericMemberInProject",
+    method: "get",
+    params: {
+      secretKey,
+      ...page,
+    },
   });
 };
 

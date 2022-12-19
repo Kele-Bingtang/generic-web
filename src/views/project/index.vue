@@ -1,7 +1,7 @@
 <template>
   <div class="projects-container">
-    <el-tabs type="border-card" v-model="activeName" class="projects-tabs">
-      <el-tab-pane label="我的项目" name="default">
+    <el-tabs type="border-card" v-model="activeName" class="projects-tabs" :before-leave="switchTab">
+      <el-tab-pane v-for="item in tabs" :key="item.name" :label="item.label" :name="item.name" :lazy="true">
         <el-row :gutter="10">
           <el-col
             :xs="12"
@@ -48,8 +48,6 @@
           </el-col>
         </el-row>
       </el-tab-pane>
-      <el-tab-pane label="我加入的" name="join" lazy>我加入的</el-tab-pane>
-      <el-tab-pane label="我创建的" name="create" lazy>我创建的</el-tab-pane>
     </el-tabs>
 
     <el-dialog v-draggable-dialog :title="dialogTitle[operatorType]" :visible.sync="dialogVisible" width="30%">
@@ -104,7 +102,7 @@ import { Form } from "element-ui";
 import {
   insertProject,
   ProjectModule,
-  queryProjectList,
+  queryProjectListOwner,
   deleteProject,
   updateProject,
   defaultProjectData,
@@ -116,20 +114,40 @@ import { refreshPage } from "@/utils/layout";
 
 type Project = ProjectModule.Project;
 
+type UserProjectSearch = ProjectModule.UserProjectSearch;
+
+export interface CommonTab {
+  id?: number;
+  label: string;
+  name: string;
+}
+
 @Component({
   components: { ProjectCard },
 })
-export default class Projects extends Vue {
-  public activeName = "default";
+export default class GenericProject extends Vue {
+  public activeName = "all";
   public dialogVisible = false;
   public operatorType: "add" | "edit" | "" = "";
   public dialogTitle: { [propName: string]: string } = {
     add: "添加项目",
     edit: "编辑项目",
   };
-
+  public tabs: Array<CommonTab> = [
+    {
+      label: "我的项目",
+      name: "all",
+    },
+    {
+      label: "我创建的",
+      name: "create",
+    },
+    {
+      label: "我加入的",
+      name: "join",
+    },
+  ];
   public projectList: Array<Project> = [];
-
   public projectForm = { ...defaultProjectData };
 
   public projectRules = {
@@ -142,10 +160,23 @@ export default class Projects extends Vue {
     this.initProject();
   }
 
-  public initProject() {
-    queryProjectList().then(res => {
+  public initProject(condition?: UserProjectSearch) {
+    queryProjectListOwner(condition).then(res => {
       this.projectList = res.data;
     });
+  }
+
+  public switchTab(activeName: string, oldActiveName: string) {
+    if (activeName === oldActiveName) {
+      return;
+    }
+    if (activeName === "create") {
+      this.initProject({ enterType: 0 });
+    } else if (activeName === "join") {
+      this.initProject({ enterType: 1 });
+    } else {
+      this.initProject();
+    }
   }
 
   public addProject() {
@@ -231,7 +262,7 @@ export default class Projects extends Vue {
       .then(() => {
         deleteProject(project).then(res => {
           if (res.data) {
-            notification.success("删除成功！")
+            notification.success("删除成功！");
             refreshPage(this);
           }
         });

@@ -47,7 +47,7 @@ export const defaultServiceData: Partial<ServiceModule.Service> = {
   deleteTable: "",
 };
 
-export const queryGenericServiceByConditions = (
+export const queryServiceByConditions = (
   condition: Array<Condition>
 ): Promise<Response<Array<ServiceModule.Service>>> => {
   return request({
@@ -57,7 +57,7 @@ export const queryGenericServiceByConditions = (
   });
 };
 
-export const queryGenericServiceList = (
+export const queryServiceList = (
   service?: ServiceModule.ServiceSearch
 ): Promise<Response<Array<ServiceModule.Service>>> => {
   return request({
@@ -67,7 +67,7 @@ export const queryGenericServiceList = (
   });
 };
 
-export const queryGenericServiceListPages = (
+export const queryServiceListPages = (
   page?: Page,
   service?: ServiceModule.ServiceSearch
 ): Promise<Response<Array<ServiceModule.Service>>> => {
@@ -81,7 +81,7 @@ export const queryGenericServiceListPages = (
   });
 };
 
-export const queryGenericServiceConditionsPages = (
+export const queryServiceConditionsPages = (
   condition: Array<Condition>,
   page?: Page
 ): Promise<Response<Array<ServiceModule.Service>>> => {
