@@ -6,28 +6,46 @@
           <img src="@/assets/default_member.jpg" alt="头像" class="avatar" />
         </div>
         <div class="item-info vertical">
-          <p>{{ data.username }}</p>
-          <el-tag v-if="userInfo.username === data.username" style="color: #fff; background-color: rgb(59, 89, 153)">
+          <p>{{ member.username }}</p>
+          <el-tag type="primary" v-if="isCreator">创建者</el-tag>
+          <el-tag type="danger" v-if="!isCreator && member.role.code" style="margin-top: 5px">
+            {{ member.role.name }}
+          </el-tag>
+          <el-tag
+            v-if="userInfo.username === member.username"
+            style="color: #fff; background-color: rgb(59, 89, 153); margin-top: 5px"
+          >
             你自己
           </el-tag>
-          <el-tag v-if="currentProject.createUser === data.username">创建者</el-tag>
         </div>
-        <div class="item-info" v-if="data.email">
-          <p>{{ data.email }}</p>
+        <div class="item-info" v-if="member.email">
+          <p>{{ member.email }}</p>
         </div>
-        <div class="item-info" v-if="data.phone">
-          <p>{{ data.phone }}</p>
+        <div class="item-info" v-if="member.phone">
+          <p>{{ member.phone }}</p>
         </div>
-        <div class="item-info" v-if="data.gender">
-          <p>{{ data.gender }}</p>
+        <div class="item-info" v-if="member.gender">
+          <p>{{ member.gender }}</p>
         </div>
-        <div class="item-info" v-if="data.birthday">
-          <p>{{ data.birthday }}</p>
+        <div class="item-info" v-if="member.birthday">
+          <p>{{ member.birthday }}</p>
         </div>
         <div class="item-info">
-          <el-radio-group v-model="radio" @input="handleSelect">
-            <el-radio label="1">只读</el-radio>
-            <el-radio label="2">可编辑</el-radio>
+          <el-radio-group
+            v-model="member.roleSelect"
+            @input="roleCode => handleSelect(roleCode, member)"
+            :disabled="!hasPermission(member)"
+          >
+            <el-tooltip effect="dark" content="只读" placement="top">
+              <el-radio label="visitor">游客</el-radio>
+            </el-tooltip>
+            <el-tooltip effect="dark" content="可编辑" placement="top">
+              <el-radio label="developer">开发者</el-radio>
+            </el-tooltip>
+
+            <el-tooltip effect="dark" content="可编辑、可修改非管理员权限" placement="top">
+              <el-radio label="admin">管理员</el-radio>
+            </el-tooltip>
           </el-radio-group>
         </div>
       </li>
@@ -44,9 +62,11 @@ import { Member } from "../index.vue";
 @Component({})
 export default class MemberCard extends Vue {
   @Prop({ required: true })
-  public data!: Member;
-
-  public radio = "2";
+  public member!: Member;
+  @Prop({ default: false })
+  public isCreator!: Member;
+  @Prop({ default: false })
+  public isAdmin!: Member;
 
   get userInfo() {
     return UserModule.userInfo;
@@ -56,8 +76,29 @@ export default class MemberCard extends Vue {
     return DataModule.project;
   }
 
-  public handleSelect(label: string) {
-    this.$emit("select", label);
+  public hasPermission(member: Member) {
+    let { userInfo, isCreator, isAdmin } = this;
+    // 自己无法操作自己
+    if (userInfo.username === member.username) {
+      return true;
+    }
+    // 如果是创建者
+    if (isCreator) {
+      return true;
+    }
+    // 如果其他人是管理员
+    if (userInfo.username !== member.username && member.role.code === "admin") {
+      return false;
+    }
+    // 如果自己是管理员
+    if (isAdmin) {
+      return true;
+    }
+    return false;
+  }
+
+  public handleSelect(roleCode: string, member: Member) {
+    this.$emit("select", roleCode, member);
   }
 }
 </script>

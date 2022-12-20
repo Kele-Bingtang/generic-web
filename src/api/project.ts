@@ -34,7 +34,7 @@ export declare module ProjectModule {
 
   type ProjectSearch = Partial<Project>;
 
-  type UserProjectSearch = Partial<UserProject>
+  type UserProjectSearch = Partial<UserProject>;
 }
 
 export const defaultProjectData: Partial<ProjectModule.Project> = {
@@ -56,18 +56,15 @@ export const queryProjectByConditions = (
   });
 };
 
-export const queryProjectListOwner = (
-  project?: ProjectModule.UserProjectSearch
-): Promise<Response<Array<ProjectModule.Project>>> => {
+export const queryGenericOneProject = (secretKey: string): Promise<Response<ProjectModule.Project>> => {
   return request({
-    url: "/genericProject/queryGenericProjectListOwner",
+    url: `/genericProject/queryGenericOneProject/${secretKey}`,
     method: "get",
-    params: { ...project },
   });
 };
 
-export const queryProjectList = (
-  project?: ProjectModule.ProjectSearch
+export const queryProjectListOwner = (
+  project?: ProjectModule.UserProjectSearch
 ): Promise<Response<Array<ProjectModule.Project>>> => {
   return request({
     url: "/genericProject/queryGenericProjectListOwner",

@@ -3,6 +3,16 @@ import { Condition, Page, Response } from "@/types/http";
 import { RequiredKey } from "@/utils/layout";
 
 export declare module UserInfoModule {
+  interface Role {
+    id: number;
+    code: string;
+    name: string;
+    create_user: string;
+    create_time: string;
+    modify_user: string;
+    modify_time: string;
+  }
+
   interface User {
     id: number;
     username: string;
@@ -15,6 +25,7 @@ export declare module UserInfoModule {
     status: number;
     registerTime: string;
     modifyTime: string;
+    role: Role;
   }
 
   type UserInsert = Omit<User, "id" | "registerTime" | "modifyTime">;
@@ -107,20 +118,6 @@ export const queryUserConditionsPages = (
   });
 };
 
-export const queryMemberInProject = (
-  secretKey: string,
-  page?: Page
-): Promise<Response<Array<Omit<UserInfoModule.User, "id" | "password">>>> => {
-  return request({
-    url: "/genericUser/queryGenericMemberInProject",
-    method: "get",
-    params: {
-      secretKey,
-      ...page,
-    },
-  });
-};
-
 export const insertUser = (user: UserInfoModule.UserInsert): Promise<Response<Array<UserInfoModule.User>>> => {
   return request({
     url: "/genericUser/insertGenericUser",
@@ -142,5 +139,43 @@ export const deleteUser = (user: UserInfoModule.UserDelete): Promise<Response<Ar
     url: "/genericUser/deleteGenericUserById",
     method: "post",
     data: user,
+  });
+};
+
+export const queryMemberInProject = (
+  secretKey: string,
+  page?: Page
+): Promise<Response<Array<Omit<UserInfoModule.User, "id" | "password">>>> => {
+  return request({
+    url: "/genericUser/queryGenericMemberInProject",
+    method: "get",
+    params: {
+      secretKey,
+      ...page,
+    },
+  });
+};
+
+export const queryGenericUserRole = (
+  secretKey: string
+): Promise<Response<Array<Omit<UserInfoModule.User, "id" | "password">>>> => {
+  return request({
+    url: `/genericUser/queryGenericUserRole/${secretKey}`,
+    method: "get",
+  });
+};
+
+export const updateUserRole = (username: string, secretKey: string, roleCode: string): Promise<Response<string>> => {
+  return request({
+    url: "/genericUser/updateGenericUserRole",
+    method: "post",
+    params: {
+      _type: "form",
+    },
+    data: {
+      username,
+      secretKey,
+      roleCode,
+    },
   });
 };

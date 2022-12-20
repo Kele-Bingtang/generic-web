@@ -2,6 +2,7 @@ import { UserModule } from "@/store/modules/user";
 import message from "@/utils/message";
 import notification from "@/utils/notification";
 import axios, { AxiosRequestConfig } from "axios";
+import qs from "qs";
 
 const cancelToken = axios.CancelToken;
 const source = cancelToken.source();
@@ -19,6 +20,22 @@ service.interceptors.request.use(
     //   config.cancelToken = source.token;
     //   source.cancel("身份异常！")
     // }
+    if (config.method?.toLowerCase() === "post") {
+      if (config.params?._type) {
+        if (config.params._type === "form") {
+          config.headers!["Content-Type"] = "application/x-www-form-urlencoded";
+          config.data = qs.stringify(config.data);
+        } else if (config.params._type === "json") {
+          config.headers!["Content-Type"] = "application/json";
+        } else if (config.params._type === "file") {
+          config.headers!["Content-Type"] = "application/form-data";
+        }
+      } else {
+        // 可以给默认的 Content-Type
+      }
+      // 最后删除 _type
+      delete config.params?._type;
+    }
     config.headers!["Authorization"] = `Bearer ${UserModule.token}`;
     return config;
   },
@@ -31,7 +48,7 @@ service.interceptors.request.use(
 service.interceptors.response.use(
   response => {
     let res = response.data;
-     if (res.code !== 200 || res.status !== "success") {
+    if (res.code !== 200 || res.status !== "success") {
       notification.error(res.message);
     }
     return res;

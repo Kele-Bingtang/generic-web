@@ -71,7 +71,7 @@ import { refreshPage } from "@/utils/layout";
 import notification from "@/utils/notification";
 import message from "@/utils/message";
 import { DataModule } from "@/store/modules/data";
-import { queryProjectList } from "@/api/project";
+import { queryGenericOneProject } from "@/api/project";
 import { UserModule } from "@/store/modules/user";
 
 export interface CategoryTab {
@@ -160,12 +160,8 @@ export default class GenericCategory extends Vue {
   public async updateProject() {
     // 如果不通过项目进来，而是链接进来，则需要更新
     if (DataModule.project.id === -1) {
-      let res = await queryProjectList({ secretKey: this.projectSecretKey });
-      if (res.data.length > 1) {
-        notification.error("您的项目密钥和其他项目密钥冲突，请删除重新建！");
-      } else {
-        DataModule.updateProject(res.data[0]);
-      }
+      let res = await queryGenericOneProject(this.projectSecretKey);
+      DataModule.updateProject(res.data);
     }
   }
 

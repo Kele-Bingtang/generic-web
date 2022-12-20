@@ -58,6 +58,7 @@ class User extends VuexModule implements UserState {
         this.SET_ROLES(roles);
         return roles;
       } else {
+        removeCacheToken();
         return ["visitor"];
       }
     } else {
