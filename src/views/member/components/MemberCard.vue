@@ -18,16 +18,16 @@
             你自己
           </el-tag>
         </div>
-        <div class="item-info" v-if="member.email">
+        <div class="item-info">
           <p>{{ member.email }}</p>
         </div>
-        <div class="item-info" v-if="member.phone">
+        <div class="item-info">
           <p>{{ member.phone }}</p>
         </div>
-        <div class="item-info" v-if="member.gender">
+        <div class="item-info">
           <p>{{ member.gender }}</p>
         </div>
-        <div class="item-info" v-if="member.birthday">
+        <div class="item-info">
           <p>{{ member.birthday }}</p>
         </div>
         <div class="item-info">
@@ -46,6 +46,18 @@
             <el-tooltip effect="dark" content="可编辑、可修改非管理员权限" placement="top">
               <el-radio label="admin">管理员</el-radio>
             </el-tooltip>
+            <el-popconfirm title="这确定删除这个成员吗？" @confirm="handleRemoveMember(member)">
+              <el-button
+                v-waves
+                type="text"
+                icon="el-icon-delete"
+                class="btn-danger"
+                slot="reference"
+                v-if="isCreator && userInfo.username !== member.username"
+              >
+                移除
+              </el-button>
+            </el-popconfirm>
           </el-radio-group>
         </div>
       </li>
@@ -80,7 +92,7 @@ export default class MemberCard extends Vue {
     let { userInfo, isCreator, isAdmin } = this;
     // 自己无法操作自己
     if (userInfo.username === member.username) {
-      return true;
+      return false;
     }
     // 如果是创建者
     if (isCreator) {
@@ -99,6 +111,10 @@ export default class MemberCard extends Vue {
 
   public handleSelect(roleCode: string, member: Member) {
     this.$emit("select", roleCode, member);
+  }
+
+  public handleRemoveMember(member: Member) {
+    this.$emit("remove", member);
   }
 }
 </script>

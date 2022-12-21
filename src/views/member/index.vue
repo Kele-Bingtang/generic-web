@@ -18,41 +18,83 @@
         </el-col>
         <el-col :span="7">
           <div class="member-action">
-            <el-button v-waves type="primary" icon="el-icon-plus" circle></el-button>
+            <el-button v-waves type="primary" icon="el-icon-plus" circle @click="handleAddMember"></el-button>
           </div>
         </el-col>
       </el-row>
     </el-card>
 
-    <el-card class="member-user-card">
-      <member-card
-        v-for="item in memberList"
-        :key="item.username"
-        :member="item"
-        :is-creator="isCreator"
-        :is-admin="isAdmin"
-        @select="handleSelectPermission"
-      />
-    </el-card>
+    <div class="member-user-card">
+      <el-card v-if="showAddMember">
+        <div class="add-member">
+          <info-selection
+            ref="infoSelection"
+            :list="allUserInfo"
+            id="username"
+            separator=" "
+            multiple
+            onlySearch
+            @change="handleSelectMember"
+            class="info-selection"
+          >
+            <template #default="{ option }">
+              <span>{{ option.username }}</span>
+              <span>-</span>
+              <span>{{ option.email }}</span>
+              <span style="float: right; color: #8492a6; font-size: 13px">
+                <el-tag v-if="option.status === '在线'" :type="getUserStatus(option.status)">
+                  {{ option.status }}
+                </el-tag>
+                <el-tag v-if="option.status === '离线'" :type="getUserStatus(option.status)">
+                  {{ option.status }}
+                </el-tag>
+              </span>
+            </template>
+          </info-selection>
+          <el-button v-waves type="primary" @click="confirmAddMember">确认添加</el-button>
+          <el-button v-waves type="danger" plain icon="el-icon-close" @click="showAddMember = false">取消</el-button>
+        </div>
+      </el-card>
+
+      <el-card>
+        <member-card
+          v-for="item in memberList"
+          :key="item.username"
+          :member="item"
+          :is-creator="isCreator"
+          :is-admin="isAdmin"
+          @select="handleSelectPermission"
+          @remove="handleRemoveMember"
+        />
+      </el-card>
+    </div>
   </div>
 </template>
 
 <script lang="ts">
 import { defaultProjectData, queryGenericOneProject } from "@/api/project";
-import { queryMemberInProject, updateUserRole, UserInfoModule } from "@/api/user";
+import {
+  addMember,
+  queryMemberInProject,
+  queryAllMemberNotInProject,
+  updateUserRole,
+  UserInfoModule,
+  removeOneMember,
+} from "@/api/user";
 import { DataModule } from "@/store/modules/data";
 import { UserModule } from "@/store/modules/user";
 import message from "@/utils/message";
 import notification from "@/utils/notification";
 import { Component, Vue } from "vue-property-decorator";
 import MemberCard from "./components/MemberCard.vue";
+import InfoSelection from "@/components/InfoSelection/index.vue";
 
 export type Member = Omit<UserInfoModule.User, "id" | "password"> & {
   roleSelect: string; // 修改角色的 code
 };
 
 @Component({
-  components: { MemberCard },
+  components: { MemberCard, InfoSelection },
 })
 export default class GenericMember extends Vue {
   public memberList: Array<Member> = [];
@@ -60,10 +102,18 @@ export default class GenericMember extends Vue {
   public isCreator = false; // 是否是项目的创建者
   public isAdmin = false; // 是否是项目的管理员，创建者一定是管理者
 
-  mounted() {
+  public allUserInfo: Array<UserInfoModule.User> = [];
+  public showAddMember = false;
+  public userStatus: { [key: string]: string } = {
+    在线: "success",
+    离线: "info",
+  };
+  public selectMember: string[] = []; // 选择的成员
+
+  async mounted() {
     let { secretKey } = this.$route.params;
     if (secretKey) {
-      this.updateProject(secretKey);
+      await this.updateProject(secretKey);
       this.initMember(secretKey);
     } else {
       message.error("无法获取成员信息，密钥无效！");
@@ -85,8 +135,7 @@ export default class GenericMember extends Vue {
     queryMemberInProject(secretKey).then(res => {
       if (res.status === "success") {
         this.memberList = res.data as unknown as Array<Member>;
-        for (let i = 0; i < this.memberList.length; i++) {
-          let member = this.memberList[i];
+        this.memberList.forEach(member => {
           // 修改角色需要
           this.$set(member, "roleSelect", member.role.code);
           let { username } = UserModule.userInfo;
@@ -95,22 +144,65 @@ export default class GenericMember extends Vue {
           if (member.username === username) {
             createUser === username ? (this.isCreator = true) : (this.isCreator = false);
             member.role.code === "admin" ? (this.isAdmin = true) : (this.isAdmin = false);
-            break;
           }
-        }
+        });
       }
     });
   }
 
   public handleSelectPermission(roleCode: string, member: Member) {
-    let { secretKey } = this.$route.params;
-    if (!secretKey) {
-      message.warning("您没有权限更新");
-    }
     let { username } = member;
-    updateUserRole(username, secretKey, roleCode).then(res => {
+    updateUserRole(username, this.project.id as number, roleCode).then(res => {
       if (res.status === "success") {
         notification.success(res.data);
+      }
+    });
+  }
+
+  public handleAddMember() {
+    this.getOtherUserInfo();
+  }
+
+  public getOtherUserInfo() {
+    // 获取所有的用户列表
+    queryAllMemberNotInProject(this.project.secretKey as string).then(res => {
+      this.allUserInfo = res.data;
+    });
+    this.showAddMember = true;
+  }
+
+  public getUserStatus(status: string) {
+    return this.userStatus[status];
+  }
+
+  public handleSelectMember(selectValue: string[]) {
+    this.selectMember = selectValue;
+  }
+
+  public confirmAddMember() {
+    let usernameList: Array<{ username: string }> = [];
+    this.selectMember.forEach(item => {
+      usernameList.push({
+        username: item,
+      });
+    });
+    addMember(this.project.id as number, usernameList).then(res => {
+      if (res.status === "success") {
+        this.initMember(this.project.secretKey as string);
+        this.getOtherUserInfo();
+        notification.success("添加成员成功");
+        (this.$refs.infoSelection as any).clearSelection();
+      }
+    });
+  }
+
+  public handleRemoveMember(member: Member) {
+    removeOneMember(member.username, this.project.id as number).then(res => {
+      if (res.status === "success") {
+        this.initMember(this.project.secretKey as string);
+        // 只有打开添加成员下拉框，才重新获取成员，否则不请求，减少请求次数
+        this.showAddMember ? this.getOtherUserInfo() : "";
+        notification.success("删除成员成功");
       }
     });
   }
@@ -157,6 +249,14 @@ export default class GenericMember extends Vue {
   }
   .member-user-card {
     margin: 15px 0px;
+    .add-member {
+      width: 540px;
+      margin: 10px auto;
+      .info-selection {
+        width: 320px;
+        display: inline-block;
+      }
+    }
   }
 }
 </style>

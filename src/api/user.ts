@@ -82,14 +82,6 @@ export const queryUserByConditions = (condition: Array<Condition>): Promise<Resp
   });
 };
 
-export const queryUserList = (user?: UserInfoModule.UserSearch): Promise<Response<Array<UserInfoModule.User>>> => {
-  return request({
-    url: "/genericUser/queryGenericUserList",
-    method: "get",
-    params: { ...user },
-  });
-};
-
 export const queryUserListPages = (
   page?: Page,
   user?: UserInfoModule.UserSearch
@@ -147,12 +139,18 @@ export const queryMemberInProject = (
   page?: Page
 ): Promise<Response<Array<Omit<UserInfoModule.User, "id" | "password">>>> => {
   return request({
-    url: "/genericUser/queryGenericMemberInProject",
+    url: `/genericUser/queryGenericMemberInProject/${secretKey}`,
     method: "get",
     params: {
-      secretKey,
       ...page,
     },
+  });
+};
+
+export const queryAllMemberNotInProject = (secretKey: string): Promise<Response<Array<UserInfoModule.User>>> => {
+  return request({
+    url: `/genericUser/queryAllMemberNotInProject/${secretKey}`,
+    method: "get",
   });
 };
 
@@ -165,7 +163,7 @@ export const queryGenericUserRole = (
   });
 };
 
-export const updateUserRole = (username: string, secretKey: string, roleCode: string): Promise<Response<string>> => {
+export const updateUserRole = (username: string, projectId: number, roleCode: string): Promise<Response<string>> => {
   return request({
     url: "/genericUser/updateGenericUserRole",
     method: "post",
@@ -174,8 +172,30 @@ export const updateUserRole = (username: string, secretKey: string, roleCode: st
     },
     data: {
       username,
-      secretKey,
+      projectId,
       roleCode,
+    },
+  });
+};
+
+export const addMember = (projectId: number, userList: Array<{ username: string }>): Promise<Response<string>> => {
+  return request({
+    url: `/genericUser/insertGenericUserProject/${projectId}`,
+    method: "post",
+    data: userList,
+  });
+};
+
+export const removeOneMember = (username: string, projectId: number): Promise<Response<string>> => {
+  return request({
+    url: `/genericUser/removeOneMember`,
+    method: "post",
+    params: {
+      _type: "form",
+    },
+    data: {
+      username,
+      projectId,
     },
   });
 };
