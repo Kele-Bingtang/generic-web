@@ -25,7 +25,16 @@
             <el-button v-waves plain type="primary" icon="el-icon-user-solid" @click="handleEnterMember">
               项目成员
             </el-button>
-            <el-button v-waves plain type="danger" icon="el-icon-caret-right">退出项目</el-button>
+            <el-button
+              v-waves
+              plain
+              type="danger"
+              icon="el-icon-caret-right"
+              @click="handleLeaveProject"
+              v-if="userInfo.username !== project.createUser"
+            >
+              退出项目
+            </el-button>
           </div>
         </el-col>
       </el-row>
@@ -71,8 +80,9 @@ import { refreshPage } from "@/utils/layout";
 import notification from "@/utils/notification";
 import message from "@/utils/message";
 import { DataModule } from "@/store/modules/data";
-import { queryGenericOneProject } from "@/api/project";
+import { defaultProjectData, queryGenericOneProject } from "@/api/project";
 import { UserModule } from "@/store/modules/user";
+import { removeOneMember } from "@/api/user";
 
 export interface CategoryTab {
   id: number;
@@ -94,6 +104,7 @@ export const defaultTabData: CategoryTab = {
 export default class GenericCategory extends Vue {
   public activeName = "default";
   public dialogVisible = false;
+  public project = { ...defaultProjectData };
   public serviceData: Array<ServiceModule.Service> = [];
   public categoryList: Array<CategoryModule.Category> = [];
   public tabs: Array<CategoryTab> = [];
@@ -114,13 +125,17 @@ export default class GenericCategory extends Vue {
     return this.$route.params && this.$route.params.secretKey;
   }
 
+  get userInfo() {
+    return UserModule.userInfo;
+  }
+
   mounted() {
     this.initCategory();
   }
 
   public async initCategory() {
     await this.updateProject();
-    queryCategoryList({ projectId: DataModule.project.id }).then(res => {
+    queryCategoryList({ projectId: this.project.id }).then(res => {
       if (res.status === "success" && res.data.length > 0) {
         this.tabs = [];
         this.categoryList = res.data;
@@ -161,8 +176,20 @@ export default class GenericCategory extends Vue {
     // 如果不通过项目进来，而是链接进来，则需要更新
     if (DataModule.project.id === -1) {
       let res = await queryGenericOneProject(this.projectSecretKey);
+      this.project = res.data;
       DataModule.updateProject(res.data);
+    } else {
+      this.project = DataModule.project;
     }
+  }
+
+  public handleLeaveProject() {
+    removeOneMember(this.userInfo.username, this.project.id as number).then(res => {
+      if (res.status === "success") {
+        notification.success("离开项目成功");
+        this.$router.push("/project");
+      }
+    });
   }
 
   public addTab() {

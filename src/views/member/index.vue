@@ -2,12 +2,12 @@
   <div class="member-container">
     <el-card class="member-title-card">
       <el-row :gutter="10">
-        <el-col :span="1">
+        <el-col :lg="1" :md="3" :sm="3" :xs="5">
           <div class="member-logo">
             <svg-icon name="members" width="28" height="28" />
           </div>
         </el-col>
-        <el-col :span="16">
+        <el-col :lg="16" :md="16" :sm="14" :xs="15">
           <div class="member-description">
             <p class="description-title">
               <span style="color: var(--theme-color)">{{ project.projectName }}</span>
@@ -16,7 +16,7 @@
             <p class="description-content">项目成员管理，可以将已存在的用户添加到你的项目</p>
           </div>
         </el-col>
-        <el-col :span="7">
+        <el-col :lg="7" :md="5" :sm="7" :xs="4">
           <div class="member-action">
             <el-button v-waves type="primary" icon="el-icon-plus" circle @click="handleAddMember"></el-button>
           </div>

@@ -24,7 +24,7 @@
     </div>
     <template v-if="serviceData.length > 0">
       <el-table
-        :data="serviceData.slice((paging.currentPage - 1) * paging.pageSize, paging.currentPage * paging.pageSize)"
+        :data="serviceData"
         border
         highlight-current-row
         row-key="id"
@@ -128,6 +128,7 @@ import { refreshPage } from "@/utils/layout";
 import { DataModule } from "@/store/modules/data";
 import { UserModule } from "@/store/modules/user";
 import message from "@/utils/message";
+import { Page } from "@/types/http";
 
 type Service = ServiceModule.Service;
 type ServiceInsert = ServiceModule.ServiceInsert;
@@ -145,7 +146,7 @@ export default class GenericService extends Vue {
   public tableKey = 0;
   public showAddress = false;
   public loading = true;
-  public paging = paging;
+  public paging = { ...paging };
   public serviceData: Array<Service> = [];
   public searchParams = {
     serviceName: "",
@@ -163,7 +164,7 @@ export default class GenericService extends Vue {
   public serviceDrawer = {
     visible: false,
     placement: "right",
-    width: 800,
+    width: 700,
     draggable: true,
     withHeader: false,
   };
@@ -174,15 +175,12 @@ export default class GenericService extends Vue {
 
   mounted() {
     this.loading = false;
-    this.initServiceList();
+    this.initServiceList({ pageNo: 1, pageSize: 20 });
   }
 
-  public initServiceList() {
+  public initServiceList(page?: Page) {
     let { project } = DataModule;
-    let isSuccess = queryServiceListPages(
-      { pageNo: 1, pageSize: 20 },
-      { projectId: project.id, categoryId: this.categoryId }
-    ).then(res => {
+    let isSuccess = queryServiceListPages(page, { projectId: project.id, categoryId: this.categoryId }).then(res => {
       if (res.status === "success") {
         this.serviceData = res.data;
         return true;
@@ -314,6 +312,7 @@ export default class GenericService extends Vue {
   }
 
   public handleSizeChange(paging: Paging) {
+    this.initServiceList({ pageNo: paging.currentPage, pageSize: paging.pageSize });
     this.paging.currentPage = paging.currentPage;
     this.paging.pageSize = paging.pageSize;
   }
