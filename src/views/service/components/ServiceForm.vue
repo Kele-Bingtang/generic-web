@@ -31,7 +31,7 @@
           </el-select>
         </el-form-item>
         <el-form-item label="SQL">
-          <code-mirror v-model="serviceForm.serviceSql" cmMode="sql" class="code-mirror" :readonly="readonly" />
+          <code-mirror v-model="serviceForm.selectSql" cmMode="sql" class="code-mirror" :readonly="readonly" />
         </el-form-item>
         <el-form-item label="接口描述">
           <el-input type="textarea" v-model="serviceForm.serviceDesc" :autosize="{ minRows: 2, maxRows: 4 }"></el-input>
