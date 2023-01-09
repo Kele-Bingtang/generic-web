@@ -93,19 +93,25 @@ export const rolesRoutes: Array<RouteConfigAndMeta> = [
     children: [
       {
         path: "index",
-        name: "Projects",
+        name: "GenericProjects",
         component: () => import("@/views/project/index.vue"),
         meta: { title: "我的项目", icon: "el-icon-menu" },
       },
       {
         path: "details/:projectName/:secretKey",
-        name: "Category",
+        name: "GenericCategory",
         component: () => import("@/views/category/index.vue"),
         meta: { title: (route: Route) => route.params.projectName, hideInMenu: true },
       },
       {
+        path: "service-col/:serviceName/:serviceId",
+        name: "GenericServiceCol",
+        component: () => import("@/views/service-col/index.vue"),
+        meta: { title: (route: Route) => route.params.serviceName + "接口字段", hideInMenu: true },
+      },
+      {
         path: "member/:secretKey",
-        name: "Member",
+        name: "GenericMember",
         component: () => import("@/views/member/index.vue"),
         meta: { title: "成员管理", hideInMenu: true },
       },

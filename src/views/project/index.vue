@@ -122,9 +122,7 @@ export interface CommonTab {
   name: string;
 }
 
-@Component({
-  components: { ProjectCard },
-})
+@Component({ components: { ProjectCard } })
 export default class GenericProject extends Vue {
   public activeName = "all";
   public dialogVisible = false;

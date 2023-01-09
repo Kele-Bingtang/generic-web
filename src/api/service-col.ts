@@ -1,5 +1,5 @@
 import request from "@/config/request";
-import { Condition, Response } from "@/types/http";
+import { Condition, Page, Response } from "@/types/http";
 import { RequiredKey } from "@/utils/layout";
 
 export declare module ServiceColModule {
@@ -9,6 +9,7 @@ export declare module ServiceColModule {
     jsonCol: string;
     reportCol: string;
     colType: string;
+    colLength: string;
     isWhereKey: number;
     defaultValue: string;
     dataEncrypt: number;
@@ -55,7 +56,7 @@ export const defaultServiceColData: Partial<ServiceColModule.ServiceCol> = {
   allowFilter: 0,
   allowShowInReport: 0,
   allowShowInDetail: 0,
-  displaySeq: 0,
+  displaySeq: 99,
   reportColWidth: 0,
   detailColWidth: 0,
   colAlign: 0,
@@ -72,12 +73,23 @@ export const queryServiceColByConditions = (
 };
 
 export const queryServiceColList = (
-  serviceCol: ServiceColModule.ServiceColSearch
+  serviceCol?: ServiceColModule.ServiceColSearch
 ): Promise<Response<Array<ServiceColModule.ServiceCol>>> => {
   return request({
     url: "/serviceCol/queryServiceColList",
     method: "get",
     params: { ...serviceCol },
+  });
+};
+
+export const queryServiceColListPages = (
+  page?: Page,
+  serviceCol?: ServiceColModule.ServiceColSearch
+): Promise<Response<Array<ServiceColModule.ServiceCol>>> => {
+  return request({
+    url: "/serviceCol/queryServiceColListPages",
+    method: "get",
+    params: { ...serviceCol, ...page },
   });
 };
 

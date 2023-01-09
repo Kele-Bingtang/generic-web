@@ -1,10 +1,10 @@
 export default {
   _route: {
     Home: "首页",
-    Projects: "我的项目",
-    Project: "项目",
-    Category: "项目接口",
-    Member: "项目成员",
+    GenericProjects: "我的项目",
+    GenericCategory: "项目接口",
+    GenericServiceCol: "接口字段",
+    GenericMember: "项目成员",
     Login: "登录",
     ErrorLogger: "错误日志",
   },

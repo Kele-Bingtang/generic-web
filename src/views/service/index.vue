@@ -14,7 +14,7 @@
           查询
         </el-button>
         <el-button v-waves icon="el-icon-refresh" @click="handleReset">重置</el-button>
-        <el-button v-waves type="warning" icon="el-icon-plus" @click="handleAddService()" style="float: right">
+        <el-button v-waves type="warning" icon="el-icon-upload2" style="float: right">
           导出
         </el-button>
         <el-button v-waves type="primary" icon="el-icon-plus" @click="handleAddService()" style="float: right">
@@ -34,7 +34,11 @@
         ref="table"
       >
         <el-table-column type="selection" width="55"></el-table-column>
-        <el-table-column prop="serviceName" label="接口名称" width="180px"></el-table-column>
+        <el-table-column prop="serviceName" label="接口名称" width="180px">
+          <template slot-scope="{ row }">
+            <el-button type="text" @click="toServiceCol(row)">{{ row.serviceName }}</el-button>
+          </template>
+        </el-table-column>
         <el-table-column prop="reportTitle" label="报表名称" width="180px"></el-table-column>
         <el-table-column prop="status" label="接口状态" width="100px">
           <template slot-scope="{ row }">
@@ -145,7 +149,7 @@ export default class GenericService extends Vue {
 
   public tableKey = 0;
   public showAddress = false;
-  public loading = true;
+  public loading = false;
   public paging = { ...paging };
   public serviceData: Array<Service> = [];
   public searchParams = {
@@ -160,7 +164,6 @@ export default class GenericService extends Vue {
     title: [{ required: true, message: "title is required", trigger: "blur" }],
   };
   public operateRow = { ...defaultServiceData };
-
   public serviceDrawer = {
     visible: false,
     placement: "right",
@@ -198,7 +201,7 @@ export default class GenericService extends Vue {
     message.success("复制成功！");
   }
 
-  // 应该将参数 searchParams 传到后台，这里演示本地数据查询
+  // 查询数据
   public handleSearchService() {
     this.loading = true;
     let { serviceName, serviceUrl } = this.searchParams;
@@ -245,11 +248,11 @@ export default class GenericService extends Vue {
     let data: Partial<Service> = { ...form };
     let { username } = UserModule.userInfo;
     if (status === "add") {
-      // 删除 Insert 时不允许的数据
+      // 删除 Insert 不允许的数据
       delete data.id;
       delete data.createTime;
       delete data.modifyTime;
-      // 添加 Insert 时需要的其他数据
+      // 添加 Insert 需要的其他数据
       data.fullUrl = this.url + data.serviceUrl;
       data.projectId = DataModule.project.id;
       data.categoryId = DataModule.category.id;
@@ -257,14 +260,14 @@ export default class GenericService extends Vue {
       data.modifyUser = username;
       this.addServiceData(data as ServiceInsert);
     } else if (status === "edit") {
-      // 删除 Update 时不允许的数据
+      // 删除 Update 不允许的数据
       delete data.createUser;
       delete data.createTime;
       delete data.modifyTime;
       delete data.projectId;
       delete data.categoryId;
       data.modifyUser = username;
-      // 添加 Update 时需要的其他数据
+      // 添加 Update 需要的其他数据
       this.editServiceData(data as ServiceUpdate);
     }
   }
@@ -309,6 +312,10 @@ export default class GenericService extends Vue {
         this.onSuccess();
       });
     }
+  }
+
+  public toServiceCol(row: Service) {
+    this.$router.push(`/project/service-col/${row.serviceName}/${row.id}`);
   }
 
   public handleSizeChange(paging: Paging) {

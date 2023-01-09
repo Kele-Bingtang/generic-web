@@ -1,5 +1,5 @@
 <template>
-  <div class="category-container">
+  <div class="category-container" v-if="projectSecretKey">
     <div class="category-info">
       <el-row :gutter="10" style="height: 100%">
         <el-col :span="18" style="height: 100%; border-right: 1px solid #f0f0f0">
@@ -40,7 +40,7 @@
       </el-row>
     </div>
 
-    <el-tabs v-model="activeName" type="card" addable @tab-remove="removeTab">
+    <el-tabs v-model="activeName" type="card" addable @tab-add="addTab" @tab-remove="removeTab">
       <el-tab-pane
         v-for="item in tabs"
         :key="item.id"
@@ -98,9 +98,7 @@ export const defaultTabData: CategoryTab = {
   closable: false,
 };
 
-@Component({
-  components: { ServiceTable },
-})
+@Component({ components: { ServiceTable } })
 export default class GenericCategory extends Vue {
   public activeName = "default";
   public dialogVisible = false;
@@ -134,6 +132,10 @@ export default class GenericCategory extends Vue {
   }
 
   public async initCategory() {
+    if (!this.projectSecretKey) {
+      message.error("无效链接");
+      return;
+    }
     await this.updateProject();
     queryCategoryList({ projectId: this.project.id }).then(res => {
       if (res.status === "success" && res.data.length > 0) {
