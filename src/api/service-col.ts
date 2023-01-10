@@ -41,7 +41,7 @@ export declare module ServiceColModule {
 }
 
 export const defaultServiceColData: Partial<ServiceColModule.ServiceCol> = {
-  id: 0,
+  id: -1,
   tableCol: "",
   jsonCol: "",
   reportCol: "",
@@ -57,8 +57,8 @@ export const defaultServiceColData: Partial<ServiceColModule.ServiceCol> = {
   allowShowInReport: 0,
   allowShowInDetail: 0,
   displaySeq: 99,
-  reportColWidth: 0,
-  detailColWidth: 0,
+  reportColWidth: -1,
+  detailColWidth: -1,
   colAlign: 0,
 };
 

@@ -110,6 +110,12 @@ export const rolesRoutes: Array<RouteConfigAndMeta> = [
         meta: { title: (route: Route) => route.params.serviceName + "接口字段", hideInMenu: true },
       },
       {
+        path: "report/:reportTitle/:serviceId",
+        name: "GenericReport",
+        component: () => import("@/views/report/index.vue"),
+        meta: { title: (route: Route) => route.params.reportTitle + "报表", hideInMenu: true },
+      },
+      {
         path: "member/:secretKey",
         name: "GenericMember",
         component: () => import("@/views/member/index.vue"),

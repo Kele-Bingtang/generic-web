@@ -8,22 +8,23 @@
       </el-button>
     </div>
     <div class="form-content">
+      <div class="title">API 配置</div>
       <el-form
         ref="dataForm"
         :model="serviceColForm"
         :rules="rules"
-        label-width="100px"
+        label-width="120px"
         class="service-form"
         :disabled="readonly"
         inline
       >
-        <el-form-item label="字段名称">
+        <el-form-item prop="tableCol" label="字段名称">
           <el-input v-model="serviceColForm.tableCol" placeholder="请输入字段名称"></el-input>
         </el-form-item>
-        <el-form-item label="请求名称">
+        <el-form-item prop="jsonCol" label="请求名称">
           <el-input v-model="serviceColForm.jsonCol" placeholder="请输入请求名称"></el-input>
         </el-form-item>
-        <el-form-item label="报表名称">
+        <el-form-item prop="reportCol" label="报表名称">
           <el-input v-model="serviceColForm.reportCol" placeholder="请输入报表名称"></el-input>
         </el-form-item>
         <el-form-item label="where 条件">
@@ -57,10 +58,44 @@
           </el-select>
         </el-form-item>
         <el-form-item label="字段类型">
-          <el-select v-model="tempServiceCol.dataEncrypt" placeholder="请选择" filterable clearable class="select-item">
+          <el-select v-model="serviceColForm.colType" placeholder="请选择" filterable clearable class="select-item">
             <el-option v-for="item in mysqlColTypeOptions" :key="item" :label="item" :value="item"></el-option>
           </el-select>
         </el-form-item>
+
+        <el-form-item label="筛选条件">
+          <el-select v-model="tempServiceCol.queryFilter" placeholder="请选择筛选条件" class="select-item">
+            <el-option label="left like" value="0"></el-option>
+            <el-option label="right like" value="1"></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="排序规则">
+          <el-select v-model="tempServiceCol.orderBy" placeholder="请选择排序规则" class="select-item">
+            <el-option label="asc" value="0"></el-option>
+            <el-option label="desc" value="1"></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="出现顺序">
+          <el-input v-model="serviceColForm.displaySeq" placeholder="请输入出现顺序"></el-input>
+        </el-form-item>
+        <el-form-item label="默认值">
+          <el-input v-model="serviceColForm.defaultValue" placeholder="请输入默认值"></el-input>
+        </el-form-item>
+        <el-form-item label="字段长度">
+          <el-input v-model="serviceColForm.colLength" placeholder="请输入字段长度"></el-input>
+        </el-form-item>
+      </el-form>
+
+      <div class="title">报表配置</div>
+      <el-form
+        ref="dataForm"
+        :model="serviceColForm"
+        :rules="rules"
+        label-width="120px"
+        class="service-form"
+        :disabled="readonly"
+        inline
+      >
         <el-form-item label="列对齐">
           <el-select v-model="tempServiceCol.colAlign" placeholder="请选择" class="select-item">
             <el-option label="左对齐" value="0"></el-option>
@@ -68,7 +103,7 @@
             <el-option label="右对齐" value="2"></el-option>
           </el-select>
         </el-form-item>
-        <el-form-item label="报表显示">
+        <el-form-item label="字段显示">
           <el-select v-model="tempServiceCol.allowShowInReport" placeholder="请选择" class="select-item">
             <el-option label="允许" value="0"></el-option>
             <el-option label="不允许" value="1"></el-option>
@@ -80,32 +115,14 @@
             <el-option label="不允许" value="1"></el-option>
           </el-select>
         </el-form-item>
-        <el-form-item label="筛选">
-          <el-select v-model="tempServiceCol.queryFilter" placeholder="请选择" class="select-item">
-            <el-option label="left like" value="0"></el-option>
-            <el-option label="right like" value="1"></el-option>
-          </el-select>
-        </el-form-item>
-        <el-form-item label="排序">
-          <el-select v-model="tempServiceCol.orderBy" placeholder="请选择" class="select-item">
-            <el-option label="asc" value="0"></el-option>
-            <el-option label="desc" value="1"></el-option>
-          </el-select>
-        </el-form-item>
         <el-form-item label="出现顺序">
           <el-input v-model="serviceColForm.displaySeq" placeholder="请输入出现顺序"></el-input>
         </el-form-item>
-        <el-form-item label="默认值">
-          <el-input v-model="serviceColForm.defaultValue" placeholder="请输入默认值"></el-input>
+        <el-form-item label="显示宽度大小">
+          <el-input v-model="reportColWidth" placeholder="请输入显示宽度"></el-input>
         </el-form-item>
-        <el-form-item label="长度">
-          <el-input v-model="serviceColForm.colLength" placeholder="请输入字段长度"></el-input>
-        </el-form-item>
-        <el-form-item label="显示长度">
-          <el-input v-model="serviceColForm.reportColWidth" placeholder="请输入显示长度"></el-input>
-        </el-form-item>
-        <el-form-item label="弹出框长度">
-          <el-input v-model="serviceColForm.detailColWidth" placeholder="请输入弹出框长度"></el-input>
+        <el-form-item label="弹出框宽度大小">
+          <el-input v-model="detailColWidth" placeholder="请输入弹出框宽度"></el-input>
         </el-form-item>
       </el-form>
     </div>
@@ -115,7 +132,7 @@
 <script lang="ts">
 import constant from "@/config/constant";
 import { Form } from "element-ui";
-import { Component, Prop, Vue } from "vue-property-decorator";
+import { Component, Prop, Vue, Watch } from "vue-property-decorator";
 import { commonRules } from "./form-rules";
 import { ServiceColModule } from "@/api/service-col";
 
@@ -129,10 +146,6 @@ export default class ServiceColForm extends Vue {
   public operateTitle = constant.operateTitle;
   public mysqlColTypeOptions = constant.mysqlColTypeOptions;
   public loading = false;
-  // 存储下拉框选择的 value 等，然后转换给 serviceColForm
-  public tempService = {
-    status: "",
-  };
   public rules = { ...commonRules };
   public tempServiceCol = {
     isWhereKey: "1",
@@ -151,14 +164,93 @@ export default class ServiceColForm extends Vue {
     return this.data;
   }
 
+  get reportColWidth() {
+    let { reportColWidth } = this.serviceColForm;
+    return reportColWidth === -1 ? "auto" : reportColWidth + "";
+  }
+
+  set reportColWidth(value: string) {
+    if (value === "auto") {
+      this.serviceColForm.reportColWidth = -1;
+    } else {
+      this.serviceColForm.reportColWidth = parseInt(value);
+    }
+  }
+
+  get detailColWidth() {
+    let { detailColWidth } = this.serviceColForm;
+    return detailColWidth === -1 ? "auto" : detailColWidth + "";
+  }
+
+  set detailColWidth(value: string) {
+    if (value === "auto") {
+      this.serviceColForm.detailColWidth = -1;
+    } else {
+      this.serviceColForm.detailColWidth = parseInt(value);
+    }
+  }
+
   get readonly() {
     return this.status === "read";
+  }
+
+  @Watch("data", { immediate: true })
+  public onDataChange() {
+    let {
+      isWhereKey,
+      dataEncrypt,
+      queryFilter,
+      orderBy,
+      allowInsert,
+      allowUpdate,
+      allowFilter,
+      allowShowInReport,
+      allowShowInDetail,
+      colAlign,
+    } = this.serviceColForm;
+    this.tempServiceCol = {
+      isWhereKey: isWhereKey + "",
+      dataEncrypt: dataEncrypt + "",
+      queryFilter: queryFilter ? queryFilter + "" : "",
+      orderBy: orderBy ? orderBy + "" : "",
+      allowInsert: allowInsert + "",
+      allowUpdate: allowUpdate + "",
+      allowFilter: allowFilter + "",
+      allowShowInReport: allowShowInReport + "",
+      allowShowInDetail: allowShowInDetail + "",
+      colAlign: colAlign + "",
+    };
   }
 
   public handleConfirmSave() {
     (this.$refs.dataForm as Form).validate(async valid => {
       if (valid) {
         let { serviceColForm, status } = this;
+        let {
+          isWhereKey,
+          dataEncrypt,
+          queryFilter,
+          orderBy,
+          allowInsert,
+          allowUpdate,
+          allowFilter,
+          allowShowInReport,
+          allowShowInDetail,
+          colAlign,
+        } = this.tempServiceCol;
+        serviceColForm = {
+          ...serviceColForm,
+          isWhereKey: Number(isWhereKey),
+          dataEncrypt: Number(dataEncrypt),
+          queryFilter: Number(queryFilter),
+          orderBy: Number(orderBy),
+          allowInsert: Number(allowInsert),
+          allowUpdate: Number(allowUpdate),
+          allowFilter: Number(allowFilter),
+          allowShowInReport: Number(allowShowInReport),
+          allowShowInDetail: Number(allowShowInDetail),
+          colAlign: Number(colAlign),
+        };
         this.$emit("confirm", serviceColForm, status);
       }
     });
@@ -183,6 +275,13 @@ export default class ServiceColForm extends Vue {
     padding: 0 20px;
     .select-item {
       width: 191px;
+    }
+    .title {
+      margin-bottom: 12px;
+      color: rgba(0, 0, 0, 0.85);
+      font-size: 16px;
+      line-height: 22px;
+      font-weight: 600;
     }
   }
 }

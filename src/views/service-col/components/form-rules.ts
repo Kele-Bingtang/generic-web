@@ -1,4 +1,5 @@
 export const commonRules = {
-  serviceName: [{ required: true, message: '请输入接口名称', trigger: 'blur' }],
-  serviceUrl: [{ required: true, message: '请输入接口地址', trigger: 'blur' }]
+  tableCol: [{ required: true, message: '请输入字段名称', trigger: 'blur' }],
+  jsonCol: [{ required: true, message: '请输入请求名称', trigger: 'blur' }],
+  reportCol: [{ required: true, message: '请输入报表名称', trigger: 'blur' }]
 }

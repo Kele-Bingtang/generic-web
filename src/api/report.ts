@@ -27,7 +27,7 @@ export declare module ReportModule {
 }
 
 export const defaultReportData: Partial<ReportModule.Report> = {
-  id: 0,
+  id: -1,
   reportTitle: "",
   description: "",
   allowEdit: 0,
@@ -35,7 +35,7 @@ export const defaultReportData: Partial<ReportModule.Report> = {
   allowDelete: 0,
   allowFilter: 0,
   allowExport: 0,
-  pageSize: 0,
+  pageSize: 20,
   chartType: 0,
 };
 
@@ -52,6 +52,14 @@ export const queryReportByConditions = (
 export const queryReportList = (report: ReportModule.ProjectSearch): Promise<Response<Array<ReportModule.Report>>> => {
   return request({
     url: "/genericReport/queryGenericReportList",
+    method: "get",
+    params: { ...report },
+  });
+};
+
+export const queryOneReport= (report: ReportModule.ProjectSearch): Promise<Response<ReportModule.Report>> => {
+  return request({
+    url: "/genericReport/queryOneGenericReport",
     method: "get",
     params: { ...report },
   });

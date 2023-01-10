@@ -3,14 +3,23 @@
     <div class="search-container">
       <div class="search-content">
         <el-button v-waves type="primary" icon="el-icon-plus" @click="handleAddServiceCol()">添加</el-button>
+        <el-button v-waves type="success" icon="el-icon-document-copy" @click="handleCopyServiceCol()">复制</el-button>
         <el-button v-waves type="warning" icon="el-icon-upload2">导出</el-button>
         <el-button v-waves icon="el-icon-refresh" @click="handleReset">重置</el-button>
       </div>
     </div>
 
     <template v-if="serviceColList.length > 0">
-      <el-table :data="serviceColList" border highlight-current-row style="width: 100%" v-loading="loading" ref="table">
-        <el-table-column type="selection" width="55"></el-table-column>
+      <el-table
+        :data="serviceColList"
+        border
+        highlight-current-row
+        style="width: 100%"
+        v-loading="loading"
+        ref="table"
+        @row-click="handleRowClick"
+      >
+        <!-- <el-table-column type="selection" width="55"></el-table-column> -->
         <el-table-column prop="tableCol" label="字段名" width="120px"></el-table-column>
         <el-table-column prop="jsonCol" label="请求名" width="120px"></el-table-column>
         <el-table-column prop="reportCol" label="报表名" width="120px"></el-table-column>
@@ -36,12 +45,19 @@
         </el-table-column>
         <el-table-column prop="displaySeq" label="出现顺序"></el-table-column>
         <el-table-column prop="defaultValue" label="默认值"></el-table-column>
-        <el-table-column prop="dataEncrypt" label="加密"></el-table-column>
+        <el-table-column prop="dataEncrypt" label="加密">
+          <template slot-scope="{ row }">
+            {{ row.dataEncrypt === 0 ? "加密" : "不加密" }}
+          </template>
+        </el-table-column>
         <el-table-column prop="colType" label="类型"></el-table-column>
         <el-table-column prop="colLength" label="长度"></el-table-column>
 
         <el-table-column label="操作" width="240px">
           <template slot-scope="{ row }">
+            <el-button type="text" icon="el-icon-search" @click="handleReadServiceCol(row)" class="btn-info">
+              查看
+            </el-button>
             <el-button type="text" icon="el-icon-edit" @click="handleEditServiceCol(row)">编辑</el-button>
             <el-button type="text" icon="el-icon-delete" @click="handleDeleteServiceCol(row)" class="btn-danger">
               删除
@@ -109,6 +125,7 @@ export default class GenericServiceCol extends Vue {
   public row!: ServiceCol;
 
   public serviceColList: Array<ServiceCol> = [];
+  public tempClickRow = { ...defaultServiceColData }; // 点击某一行后缓存起来
   public loading = false;
   public paging = { ...paging };
   public operateStatus = "";
@@ -156,6 +173,12 @@ export default class GenericServiceCol extends Vue {
 
   public handleSearchServiceCol() {}
 
+  public handleReadServiceCol(row: ServiceCol) {
+    this.operateRow = Object.assign({}, row);
+    this.operateStatus = "read";
+    this.serviceColDrawer.visible = true;
+  }
+
   public handleAddServiceCol() {
     this.operateRow = { ...defaultServiceColData };
     this.operateStatus = "add";
@@ -165,6 +188,16 @@ export default class GenericServiceCol extends Vue {
   public handleEditServiceCol(row: ServiceCol) {
     this.operateRow = Object.assign({}, row);
     this.operateStatus = "edit";
+    this.serviceColDrawer.visible = true;
+  }
+
+  public handleCopyServiceCol() {
+    if (this.tempClickRow.id === -1) {
+      message.warning("请选择某一行，再执行复制操作");
+      return;
+    }
+    this.operateRow = Object.assign({}, this.tempClickRow);
+    this.operateStatus = "add";
     this.serviceColDrawer.visible = true;
   }
 
@@ -233,6 +266,10 @@ export default class GenericServiceCol extends Vue {
         notification.success("重置成功！");
       }
     });
+  }
+
+  public handleRowClick(row: ServiceCol) {
+    this.tempClickRow = row;
   }
 
   public handleSizeChange(paging: Paging) {

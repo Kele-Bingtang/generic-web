@@ -20,6 +20,7 @@ export declare module ServiceModule {
     modifyTime: string;
     projectId: number;
     categoryId: number;
+    reportTitle: string;
   }
 
   type ServiceInsert = RequiredKey<Omit<Service, "id" | "createTime" | "modifyTime">, "serviceName" | "serviceUrl">;

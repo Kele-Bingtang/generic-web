@@ -14,9 +14,7 @@
           查询
         </el-button>
         <el-button v-waves icon="el-icon-refresh" @click="handleReset">重置</el-button>
-        <el-button v-waves type="warning" icon="el-icon-upload2" style="float: right">
-          导出
-        </el-button>
+        <el-button v-waves type="warning" icon="el-icon-upload2" style="float: right">导出</el-button>
         <el-button v-waves type="primary" icon="el-icon-plus" @click="handleAddService()" style="float: right">
           添加
         </el-button>
@@ -39,7 +37,11 @@
             <el-button type="text" @click="toServiceCol(row)">{{ row.serviceName }}</el-button>
           </template>
         </el-table-column>
-        <el-table-column prop="reportTitle" label="报表名称" width="180px"></el-table-column>
+        <el-table-column prop="reportTitle" label="报表名称" width="180px">
+          <template slot-scope="{ row }">
+            <el-button type="text" @click="toReport(row)">{{ row.reportTitle }}</el-button>
+          </template>
+        </el-table-column>
         <el-table-column prop="status" label="接口状态" width="100px">
           <template slot-scope="{ row }">
             <el-tag :type="filterStatusTagType(row.status)">{{ row.status }}</el-tag>
@@ -73,6 +75,7 @@
                 更多
               </span>
               <el-dropdown-menu slot="dropdown">
+                <el-dropdown-item command="handleEditReport" icon="el-icon-edit">编辑报表</el-dropdown-item>
                 <el-dropdown-item command="handleCopyFullUrl" icon="el-icon-document-copy">
                   复制完整链接
                 </el-dropdown-item>
@@ -106,9 +109,25 @@
         :data="operateRow"
         :status="operateStatus"
         :base-url="url"
-        @confirm="handleConfirmAdd"
+        @confirm="handleServiceConfirmAdd"
         @cancel="serviceDrawer.visible = false"
       ></service-form>
+    </drag-drawer>
+
+    <drag-drawer
+      :visible.sync="reportDrawer.visible"
+      :placement="reportDrawer.placement"
+      :width.sync="reportDrawer.width"
+      :draggable="reportDrawer.draggable"
+      :with-header="reportDrawer.withHeader"
+    >
+      <report-form
+        :data="reportData"
+        :status="operateStatus"
+        :base-url="url"
+        @confirm="handleReportConfirmAdd"
+        @cancel="reportDrawer.visible = false"
+      ></report-form>
     </drag-drawer>
   </div>
 </template>
@@ -127,19 +146,21 @@ import {
 import constant from "@/config/constant";
 import DragDrawer from "@/components/DragDrawer/index.vue";
 import ServiceForm from "./components/ServiceForm.vue";
+import ReportForm from "./components/ReportForm.vue";
 import notification from "@/utils/notification";
 import { refreshPage } from "@/utils/layout";
 import { DataModule } from "@/store/modules/data";
 import { UserModule } from "@/store/modules/user";
 import message from "@/utils/message";
 import { Page } from "@/types/http";
+import { defaultReportData, queryOneReport, ReportModule, updateReport } from "@/api/report";
 
 type Service = ServiceModule.Service;
 type ServiceInsert = ServiceModule.ServiceInsert;
 type ServiceUpdate = ServiceModule.ServiceUpdate;
 
 @Component({
-  components: { Pagination, DragDrawer, ServiceForm },
+  components: { Pagination, DragDrawer, ServiceForm, ReportForm },
 })
 export default class GenericService extends Vue {
   @Prop({ required: true })
@@ -152,6 +173,7 @@ export default class GenericService extends Vue {
   public loading = false;
   public paging = { ...paging };
   public serviceData: Array<Service> = [];
+  public reportData = { ...defaultReportData };
   public searchParams = {
     serviceName: "",
     serviceUrl: "",
@@ -165,6 +187,13 @@ export default class GenericService extends Vue {
   };
   public operateRow = { ...defaultServiceData };
   public serviceDrawer = {
+    visible: false,
+    placement: "right",
+    width: 700,
+    draggable: true,
+    withHeader: false,
+  };
+  public reportDrawer = {
     visible: false,
     placement: "right",
     width: 700,
@@ -244,7 +273,7 @@ export default class GenericService extends Vue {
     this.serviceDrawer.visible = true;
   }
 
-  public handleConfirmAdd(form: Service, status: string) {
+  public handleServiceConfirmAdd(form: Service, status: string) {
     let data: Partial<Service> = { ...form };
     let { username } = UserModule.userInfo;
     if (status === "add") {
@@ -266,10 +295,28 @@ export default class GenericService extends Vue {
       delete data.modifyTime;
       delete data.projectId;
       delete data.categoryId;
-      data.modifyUser = username;
       // 添加 Update 需要的其他数据
+      data.modifyUser = username;
       this.editServiceData(data as ServiceUpdate);
     }
+  }
+
+  public handleReportConfirmAdd(form: ReportModule.Report, status: string) {
+    let data: Partial<ReportModule.Report> = { ...form };
+    let { username } = UserModule.userInfo;
+    // 删除 Update 不允许的数据
+    delete data.createUser;
+    delete data.createTime;
+    delete data.modifyTime;
+    delete data.serviceId;
+    // 添加 Update 需要的其他数据
+    data.modifyUser = username;
+    updateReport(data as ReportModule.ReportUpdate).then(res => {
+      if (res.status === "success") {
+        notification.success("更新报表成功！");
+        refreshPage(this);
+      }
+    });
   }
 
   public addServiceData(form: ServiceInsert) {
@@ -307,7 +354,13 @@ export default class GenericService extends Vue {
   }
 
   public handleCommand(command: string, row: Service) {
-    if (command === "handleCopyFullUrl") {
+    if (command === "handleEditReport") {
+      queryOneReport({ serviceId: row.id }).then(res => {
+        this.reportData = res.data;
+        this.operateStatus = "edit";
+        this.reportDrawer.visible = true;
+      });
+    } else if (command === "handleCopyFullUrl") {
       this.$copyText(row.fullUrl).then(() => {
         this.onSuccess();
       });
@@ -316,6 +369,10 @@ export default class GenericService extends Vue {
 
   public toServiceCol(row: Service) {
     this.$router.push(`/project/service-col/${row.serviceName}/${row.id}`);
+  }
+
+  public toReport(row: Service) {
+    this.$router.push(`/project/report/${row.reportTitle}/${row.id}`);
   }
 
   public handleSizeChange(paging: Paging) {

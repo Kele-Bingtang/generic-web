@@ -58,7 +58,7 @@ import constant from "@/config/constant";
 import { Form } from "element-ui";
 import { Component, Prop, Vue } from "vue-property-decorator";
 import CodeMirror from "@/components/CodeMirror/index.vue";
-import { commonRules } from "./form-rules";
+import { commonRules } from "./service-form-rules";
 
 @Component({
   components: { CodeMirror },
@@ -95,6 +95,7 @@ export default class ServiceForm extends Vue {
     (this.$refs.dataForm as Form).validate(async valid => {
       if (valid) {
         let { serviceForm, status } = this;
+        serviceForm.status = this.tempService.status;
         this.$emit("confirm", serviceForm, status);
       }
     });
