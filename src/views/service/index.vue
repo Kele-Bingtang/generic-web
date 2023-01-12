@@ -202,7 +202,7 @@ export default class GenericService extends Vue {
   };
 
   get url() {
-    return window.location.origin + this.$route.query.baseUrl;
+    return process.env.VUE_APP_BASE_URL + "/generic-api" + this.$route.query.baseUrl;
   }
 
   mounted() {
@@ -372,7 +372,8 @@ export default class GenericService extends Vue {
   }
 
   public toReport(row: Service) {
-    this.$router.push(`/project/report/${row.reportTitle}/${row.id}`);
+    let { project } = DataModule;
+    this.$router.push(`/project/report/${row.reportTitle}/${row.id}/${project.secretKey}`);
   }
 
   public handleSizeChange(paging: Paging) {

@@ -110,7 +110,7 @@ export const rolesRoutes: Array<RouteConfigAndMeta> = [
         meta: { title: (route: Route) => route.params.serviceName + "接口字段", hideInMenu: true },
       },
       {
-        path: "report/:reportTitle/:serviceId",
+        path: "report/:reportTitle/:serviceId/:secretKey",
         name: "GenericReport",
         component: () => import("@/views/report/index.vue"),
         meta: { title: (route: Route) => route.params.reportTitle + "报表", hideInMenu: true },

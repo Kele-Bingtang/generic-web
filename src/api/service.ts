@@ -58,6 +58,16 @@ export const queryServiceByConditions = (
   });
 };
 
+export const queryOneService = (
+  service: ServiceModule.ServiceSearch
+): Promise<Response<ServiceModule.Service>> => {
+  return request({
+    url: "/genericService/queryOneGenericService",
+    method: "get",
+    params: { ...service },
+  });
+};
+
 export const queryServiceList = (
   service?: ServiceModule.ServiceSearch
 ): Promise<Response<Array<ServiceModule.Service>>> => {

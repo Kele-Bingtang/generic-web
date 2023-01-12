@@ -80,6 +80,7 @@ export default class ServiceForm extends Vue {
   public rules = { ...commonRules };
 
   get serviceForm() {
+    this.tempService.status = this.data.status;
     return this.data;
   }
 
