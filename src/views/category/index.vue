@@ -116,7 +116,7 @@ export default class GenericCategory extends Vue {
   };
 
   get url() {
-    return window.location.origin + this.$route.query.baseUrl;
+    return process.env.VUE_APP_BASE_URL + this.$route.query.baseUrl;
   }
 
   get projectSecretKey() {

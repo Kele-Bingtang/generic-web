@@ -25,7 +25,7 @@
         <el-table-column prop="reportCol" label="报表名" width="120px"></el-table-column>
         <el-table-column prop="isWhereKey" label="where 条件">
           <template slot-scope="{ row }">
-            {{ row.isWhereKey === 0 ? "作为" : "不作为" }}
+            {{ row.isWhereKey === 0 ? "不作为" : "作为" }}
           </template>
         </el-table-column>
         <el-table-column prop="allowInsert" label="添加">
@@ -47,7 +47,7 @@
         <el-table-column prop="defaultValue" label="默认值"></el-table-column>
         <el-table-column prop="dataEncrypt" label="加密">
           <template slot-scope="{ row }">
-            {{ row.dataEncrypt === 0 ? "加密" : "不加密" }}
+            {{ row.dataEncrypt === 0 ? "不加密" : "加密" }}
           </template>
         </el-table-column>
         <el-table-column prop="colType" label="类型"></el-table-column>
@@ -163,9 +163,9 @@ export default class GenericServiceCol extends Vue {
 
   public filterStatus(value: number) {
     if (value === 0) {
-      return "允许";
-    } else if (value === 1) {
       return "不允许";
+    } else if (value === 1) {
+      return "允许";
     } else {
       return "不存在";
     }

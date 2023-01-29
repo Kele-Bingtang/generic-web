@@ -29,32 +29,32 @@
         </el-form-item>
         <el-form-item label="where 条件">
           <el-select v-model="tempServiceCol.isWhereKey" placeholder="请选择" class="select-item">
-            <el-option label="作为" value="0"></el-option>
-            <el-option label="不作为" value="1"></el-option>
+            <el-option label="作为" value="1"></el-option>
+            <el-option label="不作为" value="0"></el-option>
           </el-select>
         </el-form-item>
         <el-form-item label="添加">
           <el-select v-model="tempServiceCol.allowInsert" placeholder="请选择" class="select-item">
-            <el-option label="允许" value="0"></el-option>
-            <el-option label="不允许" value="1"></el-option>
+            <el-option label="允许" value="1"></el-option>
+            <el-option label="不允许" value="0"></el-option>
           </el-select>
         </el-form-item>
         <el-form-item label="更新">
           <el-select v-model="tempServiceCol.allowUpdate" placeholder="请选择" class="select-item">
-            <el-option label="允许" value="0"></el-option>
-            <el-option label="不允许" value="1"></el-option>
+            <el-option label="允许" value="1"></el-option>
+            <el-option label="不允许" value="0"></el-option>
           </el-select>
         </el-form-item>
         <el-form-item label="查询">
           <el-select v-model="tempServiceCol.allowFilter" placeholder="请选择" class="select-item">
-            <el-option label="允许" value="0"></el-option>
-            <el-option label="不允许" value="1"></el-option>
+            <el-option label="允许" value="1"></el-option>
+            <el-option label="不允许" value="0"></el-option>
           </el-select>
         </el-form-item>
         <el-form-item label="加密">
           <el-select v-model="tempServiceCol.dataEncrypt" placeholder="请选择" class="select-item">
-            <el-option label="加密" value="0"></el-option>
-            <el-option label="不加密" value="1"></el-option>
+            <el-option label="加密" value="1"></el-option>
+            <el-option label="不加密" value="0"></el-option>
           </el-select>
         </el-form-item>
         <el-form-item label="字段类型">
@@ -105,14 +105,14 @@
         </el-form-item>
         <el-form-item label="字段显示">
           <el-select v-model="tempServiceCol.allowShowInReport" placeholder="请选择" class="select-item">
-            <el-option label="允许" value="0"></el-option>
-            <el-option label="不允许" value="1"></el-option>
+            <el-option label="允许" value="1"></el-option>
+            <el-option label="不允许" value="0"></el-option>
           </el-select>
         </el-form-item>
         <el-form-item label="弹出框显示">
           <el-select v-model="tempServiceCol.allowShowInDetail" placeholder="请选择" class="select-item">
-            <el-option label="允许" value="0"></el-option>
-            <el-option label="不允许" value="1"></el-option>
+            <el-option label="允许" value="1"></el-option>
+            <el-option label="不允许" value="0"></el-option>
           </el-select>
         </el-form-item>
         <el-form-item label="出现顺序">
@@ -148,15 +148,15 @@ export default class ServiceColForm extends Vue {
   public loading = false;
   public rules = { ...commonRules };
   public tempServiceCol = {
-    isWhereKey: "1",
-    dataEncrypt: "1",
+    isWhereKey: "0",
+    dataEncrypt: "0",
     queryFilter: "",
     orderBy: "",
-    allowInsert: "0",
-    allowUpdate: "0",
-    allowFilter: "0",
-    allowShowInReport: "0",
-    allowShowInDetail: "0",
+    allowInsert: "1",
+    allowUpdate: "1",
+    allowFilter: "1",
+    allowShowInReport: "1",
+    allowShowInDetail: "1",
     colAlign: "0",
   };
 

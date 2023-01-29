@@ -26,12 +26,31 @@
         </el-form-item>
         <el-form-item label="接口状态">
           <el-select v-model="tempService.status" placeholder="请选择接口状态" @change="handleSelectStatus">
-            <el-option label="启用" value="0"></el-option>
-            <el-option label="禁用" value="1"></el-option>
+            <el-option label="启用" value="1"></el-option>
+            <el-option label="禁用" value="0"></el-option>
           </el-select>
         </el-form-item>
         <el-form-item label="SQL">
-          <code-mirror v-model="serviceForm.selectSql" cmMode="sql" class="code-mirror" :readonly="readonly" />
+          <el-tooltip class="item" effect="dark" placement="right">
+            <div slot="content" style="line-height: 1.5715">
+              表名下拉值出现条件：项目填写了 databaseName。
+              <br />
+              如果命令行和表名都填写，则以命令行的内容为主。
+              <br />
+              命令行的表名要加上数据库名，否则无法查询哪个数据的表。
+            </div>
+            <i class="el-icon-question"></i>
+          </el-tooltip>
+          <el-tabs v-model="activeName">
+            <el-tab-pane label="表名" name="select">
+              <el-select v-model="tempService.tableName" placeholder="请选择接表名" @change="handleSelectTable">
+                <el-option v-for="item in tableNameList" :key="item" :label="item" :value="item"></el-option>
+              </el-select>
+            </el-tab-pane>
+            <el-tab-pane label="命令行" name="command" lazy>
+              <code-mirror v-model="serviceForm.selectSql" cmMode="sql" class="code-mirror" :readonly="readonly" />
+            </el-tab-pane>
+          </el-tabs>
         </el-form-item>
         <el-form-item label="接口描述">
           <el-input type="textarea" v-model="serviceForm.serviceDesc" :autosize="{ minRows: 2, maxRows: 4 }"></el-input>
@@ -70,17 +89,26 @@ export default class ServiceForm extends Vue {
   public data!: ServiceModule.Service;
   @Prop({ required: true })
   public baseUrl!: string;
+  @Prop({ default: () => [] })
+  public tableNameList!: string[];
 
   public operateTitle = constant.operateTitle;
   public loading = false;
   // 存储下拉框选择的 value 等，然后转换给 serviceForm
   public tempService = {
-    status: "",
+    status: "1",
+    tableName: "",
   };
   public rules = { ...commonRules };
+  public activeName = "select";
 
   get serviceForm() {
-    this.tempService.status = this.data.status;
+    if (this.data.status === "禁用") {
+      this.tempService.status = "0";
+    } else if (this.data.status === "启用") {
+      this.tempService.status = "1";
+    }
+    this.tempService.tableName = this.data.selectTable;
     return this.data;
   }
 
@@ -100,6 +128,10 @@ export default class ServiceForm extends Vue {
         this.$emit("confirm", serviceForm, status);
       }
     });
+  }
+
+  public handleSelectTable(selectValue: string) {
+    this.serviceForm.selectTable = selectValue;
   }
 }
 </script>

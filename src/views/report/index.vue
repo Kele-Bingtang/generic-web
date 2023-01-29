@@ -4,6 +4,7 @@
       <el-table :data="reportList" border highlight-current-row style="width: 100%" v-loading="loading" ref="table">
         <el-table-column
           v-for="index in dataLength"
+          v-if="needRender(reportList[0], index)"
           :key="getObjectKey(reportList[0], index)"
           :prop="getObjectKey(reportList[0], index)"
           :label="getObjectKey(reportList[0], index)"
@@ -34,6 +35,8 @@ import { Component, Vue } from "vue-property-decorator";
 
 @Component({ components: { Pagination } })
 export default class GenericReport extends Vue {
+  public index!: number;
+
   public reportList: any[] = [];
   public loading = false;
   public paging = { ...paging };
@@ -68,7 +71,7 @@ export default class GenericReport extends Vue {
     this.loading = true;
     queryOneService({ id: Number(serviceId) }).then(res => {
       if (res.status === "success") {
-        queryGenericData(res.data.fullUrl, secretKey).then(res => {
+        queryGenericData(res.data.fullUrl, secretKey, page).then(res => {
           this.reportList = res.data;
         });
       }
@@ -80,6 +83,14 @@ export default class GenericReport extends Vue {
   public getObjectKey(obj: Object, index: number) {
     let keys = Object.keys(obj);
     return keys[index - 1];
+  }
+
+  public needRender(obj: Object, index: number) {
+    let key = Object.keys(obj)[index - 1];
+    if (key.startsWith("_") && key.indexOf("GenericReportSetting") !== -1) {
+      return false;
+    }
+    return true;
   }
 
   public handleSizeChange(paging: Paging) {

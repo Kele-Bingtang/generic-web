@@ -5,7 +5,7 @@
         <el-input v-model="ruleForm.username" autocomplete="off"></el-input>
       </el-form-item>
       <el-form-item label="密码" prop="pass">
-        <el-input type="password" v-model="ruleForm.password" autocomplete="off"></el-input>
+        <el-input type="password" v-model="ruleForm.password" autocomplete="off" @keyup.enter.native="submitForm()"></el-input>
       </el-form-item>
       <el-form-item>
         <el-button type="primary" @click="submitForm()">提交</el-button>

@@ -11,6 +11,7 @@ export declare module ServiceModule {
     status: string;
     serviceDesc: string;
     selectSql: string;
+    selectTable: string;
     updateTable: string;
     insertTable: string;
     deleteTable: string;
@@ -58,9 +59,7 @@ export const queryServiceByConditions = (
   });
 };
 
-export const queryOneService = (
-  service: ServiceModule.ServiceSearch
-): Promise<Response<ServiceModule.Service>> => {
+export const queryOneService = (service: ServiceModule.ServiceSearch): Promise<Response<ServiceModule.Service>> => {
   return request({
     url: "/genericService/queryOneGenericService",
     method: "get",
@@ -133,5 +132,12 @@ export const deleteService = (
     url: "/genericService/deleteGenericServiceById",
     method: "post",
     data: service,
+  });
+};
+
+export const queryTableName = (databaseName: string): Promise<Response<string[]>> => {
+  return request({
+    url: `/genericService/queryTableNameByDatabaseName/${databaseName}`,
+    method: "get",
   });
 };

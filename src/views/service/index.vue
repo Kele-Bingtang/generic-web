@@ -75,7 +75,7 @@
                 更多
               </span>
               <el-dropdown-menu slot="dropdown">
-                <el-dropdown-item command="handleEditReport" icon="el-icon-edit">编辑报表</el-dropdown-item>
+                <el-dropdown-item command="handleEditReport" icon="el-icon-edit">报表编辑</el-dropdown-item>
                 <el-dropdown-item command="handleCopyFullUrl" icon="el-icon-document-copy">
                   复制完整链接
                 </el-dropdown-item>
@@ -109,6 +109,7 @@
         :data="operateRow"
         :status="operateStatus"
         :base-url="url"
+        :table-name-list="tableNameList"
         @confirm="handleServiceConfirmAdd"
         @cancel="serviceDrawer.visible = false"
       ></service-form>
@@ -140,6 +141,7 @@ import {
   deleteService,
   insertService,
   queryServiceListPages,
+  queryTableName,
   ServiceModule,
   updateService,
 } from "@/api/service";
@@ -200,6 +202,7 @@ export default class GenericService extends Vue {
     draggable: true,
     withHeader: false,
   };
+  public tableNameList: string[] = [];
 
   get url() {
     return process.env.VUE_APP_BASE_URL + "/generic-api" + this.$route.query.baseUrl;
@@ -208,6 +211,7 @@ export default class GenericService extends Vue {
   mounted() {
     this.loading = false;
     this.initServiceList({ pageNo: 1, pageSize: 20 });
+    this.initTableNameList();
   }
 
   public initServiceList(page?: Page) {
@@ -221,6 +225,15 @@ export default class GenericService extends Vue {
       }
     });
     return isSuccess;
+  }
+
+  public initTableNameList() {
+    let { project } = DataModule;
+    if (project.databaseName) {
+      queryTableName(project.databaseName).then(res => {
+        this.tableNameList = res.data;
+      });
+    }
   }
 
   public filterStatusTagType(status: string) {
