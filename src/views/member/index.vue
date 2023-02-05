@@ -94,9 +94,10 @@ export type Member = Omit<UserInfoModule.User, "id" | "password"> & {
 };
 
 @Component({
+  name: "GenericMember",
   components: { MemberCard, InfoSelection },
 })
-export default class GenericMember extends Vue {
+export default class  extends Vue {
   public memberList: Array<Member> = [];
   public project = { ...defaultProjectData };
   public isCreator = false; // 是否是项目的创建者

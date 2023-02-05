@@ -66,7 +66,7 @@
             <el-option label="不允许" value="1"></el-option>
           </el-select>
         </el-form-item>
-        <el-form-item label="图标">
+        <el-form-item label="图表">
           <el-select v-model="tempReport.chartType" placeholder="请选择" class="select-item">
             <el-option label="不开启" value="0"></el-option>
             <el-option label="饼图" value="1"></el-option>
@@ -87,9 +87,10 @@ import CodeMirror from "@/components/CodeMirror/index.vue";
 import { commonRules } from "./service-form-rules";
 
 @Component({
+  name: "ReportForm",
   components: { CodeMirror },
 })
-export default class ReportForm extends Vue {
+export default class extends Vue {
   @Prop({ required: true })
   public status!: string;
   @Prop({ required: true })

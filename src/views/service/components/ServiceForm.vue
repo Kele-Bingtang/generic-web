@@ -25,7 +25,7 @@
           </el-input>
         </el-form-item>
         <el-form-item label="接口状态">
-          <el-select v-model="tempService.status" placeholder="请选择接口状态" @change="handleSelectStatus">
+          <el-select v-model="tempService.status" placeholder="请选择接口状态">
             <el-option label="启用" value="1"></el-option>
             <el-option label="禁用" value="0"></el-option>
           </el-select>
@@ -38,12 +38,20 @@
               如果命令行和表名都填写，则以命令行的内容为主。
               <br />
               命令行的表名要加上数据库名，否则无法查询哪个数据的表。
+              <br />
+              右侧的验证可以告诉您 SQL 是否填写正确
             </div>
             <i class="el-icon-question"></i>
           </el-tooltip>
+          <el-button v-waves @click="handleVerify" style="float: right">验 证</el-button>
           <el-tabs v-model="activeName">
-            <el-tab-pane label="表名" name="select">
+            <el-tab-pane label="表名" name="selectTable">
               <el-select v-model="tempService.tableName" placeholder="请选择接表名" @change="handleSelectTable">
+                <el-option v-for="item in tableNameList" :key="item" :label="item" :value="item"></el-option>
+              </el-select>
+            </el-tab-pane>
+            <el-tab-pane label="视图" name="selectView">
+              <el-select v-model="tempService.tableName" placeholder="请选择接视图" @change="handleSelectTable">
                 <el-option v-for="item in tableNameList" :key="item" :label="item" :value="item"></el-option>
               </el-select>
             </el-tab-pane>
@@ -80,9 +88,10 @@ import CodeMirror from "@/components/CodeMirror/index.vue";
 import { commonRules } from "./service-form-rules";
 
 @Component({
+  name: "ServiceForm",
   components: { CodeMirror },
 })
-export default class ServiceForm extends Vue {
+export default class extends Vue {
   @Prop({ required: true })
   public status!: string;
   @Prop({ required: true })
@@ -100,14 +109,10 @@ export default class ServiceForm extends Vue {
     tableName: "",
   };
   public rules = { ...commonRules };
-  public activeName = "select";
+  public activeName = "selectTable";
 
   get serviceForm() {
-    if (this.data.status === "禁用") {
-      this.tempService.status = "0";
-    } else if (this.data.status === "启用") {
-      this.tempService.status = "1";
-    }
+    this.tempService.status = this.data.status + "";
     this.tempService.tableName = this.data.selectTable;
     return this.data;
   }
@@ -116,15 +121,11 @@ export default class ServiceForm extends Vue {
     return this.status === "read";
   }
 
-  public handleSelectStatus(selectValue: string) {
-    this.serviceForm.status = selectValue;
-  }
-
   public handleConfirmSave() {
     (this.$refs.dataForm as Form).validate(async valid => {
       if (valid) {
         let { serviceForm, status } = this;
-        serviceForm.status = this.tempService.status;
+        serviceForm.status = parseInt(this.tempService.status);
         this.$emit("confirm", serviceForm, status);
       }
     });
@@ -133,6 +134,8 @@ export default class ServiceForm extends Vue {
   public handleSelectTable(selectValue: string) {
     this.serviceForm.selectTable = selectValue;
   }
+
+  public handleVerify() {}
 }
 </script>
 

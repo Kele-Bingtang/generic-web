@@ -98,8 +98,8 @@ export const defaultTabData: CategoryTab = {
   closable: false,
 };
 
-@Component({ components: { ServiceTable } })
-export default class GenericCategory extends Vue {
+@Component({ name: "GenericCategory", components: { ServiceTable } })
+export default class extends Vue {
   public activeName = "default";
   public dialogVisible = false;
   public project = { ...defaultProjectData };

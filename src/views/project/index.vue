@@ -50,7 +50,7 @@
       </el-tab-pane>
     </el-tabs>
 
-    <el-dialog v-draggable-dialog :title="dialogTitle[operatorType]" :visible.sync="dialogVisible" width="30%">
+    <el-dialog v-draggable-dialog :title="dialogTitle[operateStatus]" :visible.sync="dialogVisible" width="30%">
       <el-form ref="projectForm" :model="projectForm" :rules="projectRules" label-width="110px">
         <el-form-item label="项目名称：" prop="projectName">
           <el-input v-model="projectForm.projectName" placeholder="请输入项目名称"></el-input>
@@ -86,7 +86,7 @@
         <el-button
           v-waves
           type="primary"
-          @click="operatorType === 'add' ? addProjectConfirm() : operatorType === 'edit' ? editProjectConfirm() : ''"
+          @click="operateStatus === 'add' ? addProjectConfirm() : operateStatus === 'edit' ? editProjectConfirm() : ''"
         >
           确 定
         </el-button>
@@ -122,11 +122,11 @@ export interface CommonTab {
   name: string;
 }
 
-@Component({ components: { ProjectCard } })
-export default class GenericProject extends Vue {
+@Component({ name: "GenericProject", components: { ProjectCard } })
+export default class extends Vue {
   public activeName = "all";
   public dialogVisible = false;
-  public operatorType: "add" | "edit" | "" = "";
+  public operateStatus: "add" | "edit" | "" = "";
   public dialogTitle: { [propName: string]: string } = {
     add: "添加项目",
     edit: "编辑项目",
@@ -179,7 +179,7 @@ export default class GenericProject extends Vue {
 
   public addProject() {
     this.dialogVisible = true;
-    this.operatorType = "add";
+    this.operateStatus = "add";
     this.$nextTick(() => {
       (this.$refs.projectForm as Form).clearValidate();
     });
@@ -208,7 +208,7 @@ export default class GenericProject extends Vue {
 
   public editProject(project: Project) {
     this.dialogVisible = true;
-    this.operatorType = "edit";
+    this.operateStatus = "edit";
     let { id, projectName, baseUrl, description, databaseName } = project;
     this.projectForm = { id, projectName, baseUrl, description, databaseName };
     this.projectForm.modifyUser = UserModule.userInfo.username;

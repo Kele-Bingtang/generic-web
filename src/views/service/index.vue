@@ -1,7 +1,7 @@
 <template>
   <div class="service-container">
-    <div class="search-container">
-      <div class="search-content">
+    <div class="btn-container">
+      <div class="btn-content">
         <el-input v-model="searchParams.serviceName" placeholder="接口名称" style="width: 200px" />
         <el-input v-model="searchParams.serviceUrl" placeholder="接口地址" style="width: 200px; margin-left: 10px" />
         <el-button
@@ -44,7 +44,7 @@
         </el-table-column>
         <el-table-column prop="status" label="接口状态" width="100px">
           <template slot-scope="{ row }">
-            <el-tag :type="filterStatusTagType(row.status)">{{ row.status }}</el-tag>
+            <el-tag :type="filterStatusTagType(row.status)">{{ row.status === 0 ? "禁用" : "启用" }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column prop="serviceUrl" label="接口地址">
@@ -162,9 +162,10 @@ type ServiceInsert = ServiceModule.ServiceInsert;
 type ServiceUpdate = ServiceModule.ServiceUpdate;
 
 @Component({
+  name: "GenericService",
   components: { Pagination, DragDrawer, ServiceForm, ReportForm },
 })
-export default class GenericService extends Vue {
+export default class extends Vue {
   @Prop({ required: true })
   public categoryId!: number;
 
@@ -236,7 +237,7 @@ export default class GenericService extends Vue {
     }
   }
 
-  public filterStatusTagType(status: string) {
+  public filterStatusTagType(status: number) {
     return constant.serviceStatusType[status];
   }
   public onSuccess() {
@@ -360,6 +361,7 @@ export default class GenericService extends Vue {
         deleteService(row).then(res => {
           if (res.status === "success") {
             notification.success("删除成功！");
+            refreshPage(this);
           }
         });
       })
@@ -399,7 +401,7 @@ export default class GenericService extends Vue {
 
 <style lang="scss" scoped>
 .service-container {
-  .search-container {
+  .btn-container {
     margin-bottom: 10px;
   }
 }

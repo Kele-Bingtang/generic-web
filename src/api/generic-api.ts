@@ -14,3 +14,25 @@ export const queryGenericData = (fullUrl: string, secretKey: string, page?: Page
     },
   });
 };
+
+export const operateGenericDataForm = (
+  fullUrl: string,
+  secretKey: string,
+  data: any,
+  submitType: "insert" | "update" | "delete"
+): Promise<Response<string>> => {
+  return request({
+    url: fullUrl,
+    method: "post",
+    headers: {
+      generic_secret_key: secretKey,
+    },
+    params: {
+      _type: "form",
+    },
+    data: {
+      submitType,
+      ...data,
+    },
+  });
+};

@@ -5,7 +5,12 @@
         <el-input v-model="ruleForm.username" autocomplete="off"></el-input>
       </el-form-item>
       <el-form-item label="密码" prop="pass">
-        <el-input type="password" v-model="ruleForm.password" autocomplete="off" @keyup.enter.native="submitForm()"></el-input>
+        <el-input
+          type="password"
+          v-model="ruleForm.password"
+          autocomplete="off"
+          @keyup.enter.native="submitForm()"
+        ></el-input>
       </el-form-item>
       <el-form-item>
         <el-button type="primary" @click="submitForm()">提交</el-button>
@@ -20,8 +25,8 @@ import { Component, Vue } from "vue-property-decorator";
 import { UserModule } from "@/store/modules/user";
 import notification from "@/utils/notification";
 
-@Component({})
-export default class Home extends Vue {
+@Component({ name: "Home" })
+export default class extends Vue {
   public ruleForm = {
     username: "",
     password: "",

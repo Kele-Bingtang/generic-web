@@ -8,7 +8,7 @@ export declare module ServiceModule {
     serviceName: string;
     serviceUrl: string;
     fullUrl: string;
-    status: string;
+    status: number;
     serviceDesc: string;
     selectSql: string;
     selectTable: string;
@@ -41,7 +41,7 @@ export const defaultServiceData: Partial<ServiceModule.Service> = {
   serviceName: "",
   serviceUrl: "",
   fullUrl: "",
-  status: "",
+  status: 1,
   serviceDesc: "",
   selectSql: "",
   updateTable: "",

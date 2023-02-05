@@ -59,7 +59,7 @@
         </el-form-item>
         <el-form-item label="字段类型">
           <el-select v-model="serviceColForm.colType" placeholder="请选择" filterable clearable class="select-item">
-            <el-option v-for="item in mysqlColTypeOptions" :key="item" :label="item" :value="item"></el-option>
+            <el-option v-for="item in colTypeOptions" :key="item" :label="item" :value="item"></el-option>
           </el-select>
         </el-form-item>
 
@@ -121,9 +121,9 @@
         <el-form-item label="显示宽度大小">
           <el-input v-model="reportColWidth" placeholder="请输入显示宽度"></el-input>
         </el-form-item>
-        <el-form-item label="弹出框宽度大小">
+        <!-- <el-form-item label="弹出框宽度大小">
           <el-input v-model="detailColWidth" placeholder="请输入弹出框宽度"></el-input>
-        </el-form-item>
+        </el-form-item> -->
       </el-form>
     </div>
   </div>
@@ -136,15 +136,14 @@ import { Component, Prop, Vue, Watch } from "vue-property-decorator";
 import { commonRules } from "./form-rules";
 import { ServiceColModule } from "@/api/service-col";
 
-@Component({})
-export default class ServiceColForm extends Vue {
+@Component({ name: "ServiceColForm" })
+export default class extends Vue {
   @Prop({ required: true })
   public status!: string;
   @Prop({ required: true })
   public data!: ServiceColModule.ServiceCol;
 
   public operateTitle = constant.operateTitle;
-  public mysqlColTypeOptions = constant.mysqlColTypeOptions;
   public loading = false;
   public rules = { ...commonRules };
   public tempServiceCol = {
@@ -162,6 +161,10 @@ export default class ServiceColForm extends Vue {
 
   get serviceColForm() {
     return this.data;
+  }
+
+  get colTypeOptions() {
+    return Object.keys(constant.colTypeAndComponent);
   }
 
   get reportColWidth() {

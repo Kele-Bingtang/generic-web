@@ -69,8 +69,8 @@ import { UserModule } from "@/store/modules/user";
 import { Component, Prop, Vue } from "vue-property-decorator";
 import { Member } from "../index.vue";
 
-@Component({})
-export default class MemberCard extends Vue {
+@Component({ name: "MemberCard" })
+export default class extends Vue {
   @Prop({ required: true })
   public member!: Member;
   @Prop({ default: false })

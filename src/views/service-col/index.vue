@@ -18,6 +18,7 @@
         v-loading="loading"
         ref="table"
         @row-click="handleRowClick"
+        @row-dblclick="handleEditServiceCol(tempClickRow)"
       >
         <!-- <el-table-column type="selection" width="55"></el-table-column> -->
         <el-table-column prop="tableCol" label="字段名" width="120px"></el-table-column>
@@ -111,7 +112,6 @@ import { isNumber } from "@/utils/validate";
 import Pagination, { Paging, paging } from "@/components/Pagination/index.vue";
 import { Page } from "@/types/http";
 import notification from "@/utils/notification";
-import { refreshPage } from "@/utils/layout";
 import { UserModule } from "@/store/modules/user";
 import ServiceColForm from "./components/ServiceColForm.vue";
 import DragDrawer from "@/components/DragDrawer/index.vue";
@@ -120,8 +120,8 @@ type ServiceCol = ServiceColModule.ServiceCol;
 type ServiceColInsert = ServiceColModule.ServiceColInsert;
 type ServiceColUpdate = ServiceColModule.ServiceColUpdate;
 
-@Component({ components: { Pagination, DragDrawer, ServiceColForm } })
-export default class GenericServiceCol extends Vue {
+@Component({ name: "GenericServiceCol", components: { Pagination, DragDrawer, ServiceColForm } })
+export default class extends Vue {
   public row!: ServiceCol;
 
   public serviceColList: Array<ServiceCol> = [];
@@ -185,7 +185,7 @@ export default class GenericServiceCol extends Vue {
     this.serviceColDrawer.visible = true;
   }
 
-  public handleEditServiceCol(row: ServiceCol) {
+  public handleEditServiceCol(row: ServiceCol | Partial<ServiceCol>) {
     this.operateRow = Object.assign({}, row);
     this.operateStatus = "edit";
     this.serviceColDrawer.visible = true;
@@ -197,7 +197,7 @@ export default class GenericServiceCol extends Vue {
       return;
     }
     this.operateRow = Object.assign({}, this.tempClickRow);
-    this.operateStatus = "add";
+    this.operateStatus = "copy";
     this.serviceColDrawer.visible = true;
   }
 
@@ -229,8 +229,9 @@ export default class GenericServiceCol extends Vue {
   public addServiceData(form: ServiceColInsert) {
     insertServiceCol(form).then(res => {
       if (res.status === "success") {
+        this.serviceColDrawer.visible = false;
         notification.success("添加接口成功！");
-        refreshPage(this);
+        this.initServiceCol();
       }
     });
   }
@@ -238,8 +239,9 @@ export default class GenericServiceCol extends Vue {
   public editServiceData(form: ServiceColUpdate) {
     updateServiceCol(form).then(res => {
       if (res.status === "success") {
+        this.serviceColDrawer.visible = false;
         notification.success("更新接口成功！");
-        refreshPage(this);
+        this.initServiceCol();
       }
     });
   }
@@ -254,6 +256,7 @@ export default class GenericServiceCol extends Vue {
         deleteServiceCol(row).then(res => {
           if (res.status === "success") {
             notification.success("删除成功！");
+            this.initServiceCol();
           }
         });
       })

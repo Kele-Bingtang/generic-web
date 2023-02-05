@@ -52,15 +52,28 @@ const mysqlColTypeOptions = [
   "year",
 ];
 
+const colTypeAndComponent = {
+  String: ["el-input", "text"],
+  Integer: ["el-input", "number"],
+  Float: ["el-input", "number"],
+  Double: ["el-input", "number"],
+  Date: ["el-date-picker", "date"],
+  DateTime: ["el-date-picker", "datetime"],
+  TimeStamp: ["el-date-picker", "datetime"],
+  Blob: ["el-input", "textarea"],
+  Text: ["el-input", "textarea"],
+};
+
 const serviceStatusType: { [propName: string]: string } = {
-  启用: "success",
-  关闭: "warning",
+  0: "warning",
+  1: "success",
 };
 
 const operateTitle: { [propName: string]: string } = {
   read: "查看",
   edit: "编辑",
   add: "创建",
+  copy: "复制",
 };
 
 export default {
@@ -68,4 +81,5 @@ export default {
   serviceStatusType,
   operateTitle,
   mysqlColTypeOptions,
+  colTypeAndComponent,
 };
