@@ -1,21 +1,87 @@
 <template>
-  <div class="report-container">
-    <div class="btn-container">
-      <el-button v-waves type="primary" size="small" icon="el-icon-plus" @click="handleAddReport()">添加</el-button>
-      <el-button v-waves type="primary" plain size="small" icon="el-icon-edit" @click="handleEditReport()">
-        编辑
-      </el-button>
-      <el-button v-waves type="danger" plain size="small" icon="el-icon-delete" @click="handleDeleteReport()">
-        删除
-      </el-button>
-      <el-button v-waves type="info" plain size="small" icon="el-icon-s-promotion" @click="handleToColPage">
-        跳转至字段配置页面
-      </el-button>
-    </div>
+  <div class="report-container" v-if="reportKeyList.length > 0">
+    <el-row :gutter="10">
+      <el-col :span="2">
+        <div class="header">
+          <h2>{{ reportSetting.reportTitle }}</h2>
+          <span>{{ reportSetting.description }}</span>
+        </div>
+      </el-col>
+      <el-col :span="18" v-if="allowFilter">
+        <report-search
+          :init-obj="searchRow"
+          :data="reportDataList[0]"
+          :report-key-list="reportKeyList"
+          @handle-report-search="handleReportSearch"
+        ></report-search>
+      </el-col>
+      <el-col :span="allowFilter ? 4 : 22">
+        <div class="btn-container">
+          <el-button
+            v-waves
+            type="primary"
+            size="small"
+            icon="el-icon-plus"
+            @click="handleAddReport()"
+            v-if="reportSetting.allowAdd"
+            class="btn-item"
+          >
+            添加
+          </el-button>
+          <el-button
+            v-waves
+            type="primary"
+            plain
+            size="small"
+            icon="el-icon-edit"
+            @click="handleEditReport()"
+            v-if="reportSetting.allowEdit"
+            class="btn-item"
+          >
+            编辑
+          </el-button>
+          <el-button
+            v-waves
+            type="danger"
+            plain
+            size="small"
+            icon="el-icon-delete"
+            @click="handleDeleteReport()"
+            v-if="reportSetting.allowDelete"
+            class="btn-item"
+          >
+            删除
+          </el-button>
+          <el-button
+            v-waves
+            type="success"
+            plain
+            size="small"
+            icon="el-icon-upload2"
+            @click="handleExportReport()"
+            v-if="reportSetting.allowExport"
+            class="btn-item"
+          >
+            导出
+          </el-button>
+          <el-button
+            v-waves
+            type="info"
+            plain
+            size="small"
+            icon="el-icon-s-promotion"
+            @click="handleToColPage"
+            class="btn-item"
+          >
+            跳转至字段配置页面
+          </el-button>
+        </div>
+      </el-col>
+    </el-row>
 
-    <template v-if="reportList.length > 0">
+    <template v-if="reportDataList.length > 0">
       <el-table
-        :data="reportList"
+        :data="reportDataList"
         border
         highlight-current-row
         style="width: 100%"
@@ -26,9 +92,9 @@
       >
         <el-table-column
           v-for="index in dataLength"
-          v-if="needRender(reportList[0], index - 1)"
-          :key="getObjectKey(index - 1)"
-          :prop="getObjectKey(index - 1)"
+          v-if="needRender(reportDataList[0], reportKeyList[index - 1])"
+          :key="reportKeyList[index - 1]"
+          :prop="reportKeyList[index - 1]"
           :label="getLabel(index - 1)"
           :width="columnWidth(index - 1)"
           :align="columnAlign(index - 1)"
@@ -38,19 +104,20 @@
         v-draggable-dialog
         :title="operateTitle[operateStatus]"
         :visible.sync="dialogVisible"
-        width="60%"
+        :width="reportSetting.dialogWidth"
         :close-on-click-modal="false"
       >
         <report-form
           :data="operateRow"
+          :report-key-list="reportKeyList"
           :status="operateStatus"
           @cancel="dialogVisible = false"
           @confirm="handleConfirmReport"
         ></report-form>
       </el-dialog>
       <pagination
-        v-show="reportList.length > 0"
-        :total="reportList.length"
+        v-show="reportDataList.length > 0"
+        :total="reportDataList.length"
         :paging="paging"
         @pagination="handleSizeChange"
       />
@@ -63,7 +130,8 @@
 
 <script lang="ts">
 import { operateGenericDataForm, queryGenericData } from "@/api/generic-api";
-import { defaultServiceData, queryOneService, ServiceModule } from "@/api/service";
+import { defaultReportSetting, queryOneReport } from "@/api/report";
+import { defaultServiceData, queryOneService } from "@/api/service";
 import { ServiceColModule } from "@/api/service-col";
 import Pagination, { Paging, paging } from "@/components/Pagination/index.vue";
 import constant from "@/config/constant";
@@ -73,25 +141,28 @@ import notification from "@/utils/notification";
 import { isNumber } from "@/utils/validate";
 import { Component, Vue } from "vue-property-decorator";
 import ReportForm from "./components/ReportForm.vue";
+import ReportSearch from "./components/ReportSearch.vue";
 
 const REPORT_SETTING = "GenericReportSetting";
 
-interface ReportData {
+export interface ReportData {
   [key: string]: ServiceColModule.ServiceCol;
 }
 
-@Component({ name: "GenericReport", components: { Pagination, ReportForm } })
+@Component({ name: "GenericReport", components: { Pagination, ReportForm, ReportSearch } })
 export default class extends Vue {
   public index!: number;
 
   public serviceData = { ...defaultServiceData };
-  public reportList: Array<ReportData> = [];
+  public reportSetting = { ...defaultReportSetting };
+  public reportDataList: Array<ReportData> = [];
   public reportKeyList: string[] = [];
   public loading = false;
   public paging = { ...paging };
   public operateStatus: "add" | "edit" | "" = "";
   public dialogVisible = false;
   public operateRow: any = {};
+  public searchRow: any = {};
   public operateTitle = constant.operateTitle;
   // 暂时不需要
   public reportColDrawer = {
@@ -103,50 +174,68 @@ export default class extends Vue {
   };
 
   get dataLength() {
-    let { reportList } = this;
-    if (reportList.length > 0) {
-      let keys = Object.keys(this.reportList[0]);
+    let { reportDataList } = this;
+    if (reportDataList.length > 0) {
+      let keys = Object.keys(this.reportDataList[0]);
       return keys.length;
     }
     return 0;
   }
 
-  mounted() {
-    this.initReportData();
+  get allowFilter() {
+    return this.reportSetting.allowFilter === 1;
   }
 
-  public initReportData(page?: Page) {
+  mounted() {
     let { serviceId, secretKey } = this.$route.params;
     if (!serviceId || !isNumber(serviceId) || !secretKey) {
       message.error("无效链接");
       return new Promise(resolve => resolve(false));
     }
+    this.initReportSettings().then(res => {
+      this.paging.pageSize = res.pageSize;
+      this.initReportData({ pageNo: 1, pageSize: res.pageSize });
+    });
+  }
+
+  public async initReportSettings() {
+    let { serviceId } = this.$route.params;
+    return await queryOneReport({ serviceId: Number(serviceId) }).then(res => {
+      this.reportSetting = res.data;
+      return res.data;
+    });
+  }
+
+  public async initReportData(page: Page = { pageNo: 1, pageSize: this.reportSetting.pageSize || 20 }) {
+    let { serviceId, secretKey } = this.$route.params;
     this.loading = true;
-    queryOneService({ id: Number(serviceId) }).then(res => {
+    await queryOneService({ id: Number(serviceId) }).then(async res => {
       if (res.status === "success") {
         this.serviceData = res.data;
-        queryGenericData(res.data.fullUrl, secretKey, page).then(res => {
-          this.reportList = res.data;
-          this.reportKeyList = Object.keys(this.reportList[0]);
+        await queryGenericData(res.data.fullUrl, secretKey, page).then(res => {
+          this.reportDataList = res.data;
+          this.reportKeyList = Object.keys((this.reportDataList && this.reportDataList[0]) || []);
+          this.initQueryParams();
           this.initOperatorRow();
         });
       }
     });
-
     this.loading = false;
   }
 
   public initOperatorRow() {
-    let obj: { [key: string]: any } = {};
-    Object.keys(this.reportList[0]).forEach(key => {
+    let obj: ReportData = {};
+    this.reportKeyList.forEach(key => {
       if (key.indexOf(REPORT_SETTING) === -1) {
         if (typeof obj[key] === "number") {
           this.$set(obj, key, -1);
+        } else if (typeof obj[key] === "boolean") {
+          this.$set(obj, key, false);
         } else {
           this.$set(obj, key, "");
         }
       } else {
-        obj[key] = this.reportList[0][key];
+        obj[key] = this.reportDataList[0][key];
       }
     });
     // 使用 _generic_temporary 目的是为了不让每次点击新增都初始化，所以初始化携带 _generic_temporary: true 来判断
@@ -154,17 +243,32 @@ export default class extends Vue {
     this.operateRow = { ...obj };
   }
 
-  public getObjectKey(index: number) {
-    return this.reportKeyList[index];
+  public initQueryParams() {
+    let obj: ReportData = {};
+    let reportKeyList = this.reportKeyList;
+    reportKeyList.forEach((key, index) => {
+      let reportColSetting = this.getReportColSetting(index);
+      if (reportColSetting?.allowFilter === 1) {
+        if (typeof obj[key] === "number") {
+          this.$set(obj, key, -1);
+        } else if (typeof obj[key] === "boolean") {
+          this.$set(obj, key, false);
+        } else {
+          this.$set(obj, key, "");
+        }
+        this.$set(obj, `_${key}${REPORT_SETTING}`, reportColSetting);
+      }
+    });
+
+    this.searchRow = { ...obj };
   }
 
   public getLabel(index: number) {
-    let reportSetting = this.getReportSetting(index);
-    return reportSetting?.reportCol || reportSetting?.jsonCol;
+    let reportColSetting = this.getReportColSetting(index);
+    return reportColSetting?.reportCol || reportColSetting?.jsonCol;
   }
 
-  public needRender(obj: ReportData, index: number, keyList: string[] = this.reportKeyList) {
-    let key = keyList[index];
+  public needRender(obj: ReportData, key: string) {
     if (key && key.startsWith("_") && key.indexOf(REPORT_SETTING) !== -1) {
       return false;
     }
@@ -177,7 +281,7 @@ export default class extends Vue {
   }
 
   public columnWidth(index: number) {
-    let width = this.getReportSetting(index)?.reportColWidth;
+    let width = this.getReportColSetting(index)?.reportColWidth;
     if (width === -1) {
       return "auto";
     } else {
@@ -186,7 +290,7 @@ export default class extends Vue {
   }
 
   public columnAlign(index: number) {
-    let align = this.getReportSetting(index)?.colAlign;
+    let align = this.getReportColSetting(index)?.colAlign;
     if (align === 0) {
       return "left";
     } else if (align === 1) {
@@ -196,8 +300,8 @@ export default class extends Vue {
     }
   }
 
-  public getReportSetting(index: number) {
-    let obj = this.reportList[0];
+  public getReportColSetting(index: number) {
+    let obj = this.reportDataList[0];
     let key = this.reportKeyList[index];
     let targetKey = `_${key}${REPORT_SETTING}`;
     return obj[targetKey];
@@ -205,6 +309,28 @@ export default class extends Vue {
 
   public handleRowClick(row: any, column: any, event: any) {
     this.operateRow = { ...row };
+  }
+
+  public async handleReportSearch(searchParams: ReportData) {
+    let { fullUrl } = this.serviceData;
+    let { secretKey } = this.$route.params;
+    this.loading = true;
+    let page = {
+      pageNo: 1,
+      pageSize: this.reportSetting.pageSize || 20,
+    };
+    let keyList = Object.keys(searchParams);
+    keyList.forEach((key, index) => {
+      if (!this.needRender(searchParams, keyList[index])) {
+        delete searchParams[key];
+      }
+    });
+    await queryGenericData(fullUrl || "", secretKey, page, searchParams).then(res => {
+      if(res.status === "success") {
+        this.reportDataList = res.data;
+      }
+    });
+    this.loading = false;
   }
 
   public handleAddReport() {
@@ -216,7 +342,7 @@ export default class extends Vue {
   }
 
   public handleEditReport() {
-    if (Object.keys(this.operateRow).length === 0) {
+    if (this.operateRow._generic_temporary) {
       message.warning("请选择任意一行数据");
       return;
     }
@@ -227,9 +353,8 @@ export default class extends Vue {
   public handleConfirmReport(form: ReportData, status: string) {
     let { secretKey } = this.$route.params;
     let keyList = Object.keys(form);
-    for (let i = 0; i < keyList.length; i++) {
-      let key = keyList[i];
-      if (!this.needRender(form, i, keyList)) {
+    keyList.forEach((key, index) => {
+      if (!this.needRender(form, this.reportKeyList[index])) {
         this.$delete(form, key);
       } else if (form[`_${key}${REPORT_SETTING}`]?.allowShowInDetail === 0) {
         // 编辑时，主键不允许去掉
@@ -239,7 +364,8 @@ export default class extends Vue {
           this.$delete(form, key);
         }
       }
-    }
+    });
+
     let operate: "insert" | "update" | "delete" = "insert";
     if (status === "add") {
       operate = "insert";
@@ -277,6 +403,8 @@ export default class extends Vue {
       .catch(() => {});
   }
 
+  public handleExportReport() {}
+
   public handleToColPage() {
     let { serviceId } = this.$route.params;
     let { serviceName } = this.serviceData;
@@ -294,8 +422,21 @@ export default class extends Vue {
 <style lang="scss" scoped>
 .report-container {
   padding: 20px;
+  .header {
+    display: inline-block;
+    h2 {
+      margin-top: 0;
+      margin-bottom: 5px;
+    }
+    span {
+      color: #999;
+    }
+  }
   .btn-container {
     margin-bottom: 10px;
+    .btn-item {
+      margin: 0 0 10px 10px;
+    }
   }
 }
 </style>

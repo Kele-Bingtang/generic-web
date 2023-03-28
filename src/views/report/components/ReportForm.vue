@@ -11,16 +11,16 @@
         :class="{ 'report-form-item': inline }"
       >
         <component
-          :is="getComponent(index- 1)"
-          :type="getComponentType(index- 1)"
-          :value-format="getDateValueFormat(index- 1)"
+          :is="getComponent(index - 1)"
+          :type="getComponentType(index - 1)"
+          :value-format="getDateValueFormat(index - 1)"
           v-model="reportForm[reportKeyList[index - 1]]"
         ></component>
       </el-form-item>
     </el-form>
     <div class="report-form-footer">
-      <el-button @click="$emit('cancel')">取 消</el-button>
-      <el-button type="primary" @click="$emit('confirm', { ...reportForm }, status)">确 定</el-button>
+      <el-button v-waves @click="$emit('cancel')">取 消</el-button>
+      <el-button v-waves type="primary" @click="$emit('confirm', { ...reportForm }, status)">确 定</el-button>
     </div>
   </div>
 </template>
@@ -40,14 +40,12 @@ export default class extends Vue {
   public data!: any;
   @Prop({ required: true })
   public status!: string;
+  @Prop({ required: true })
+  public reportKeyList!: string[];
 
   public inline = true;
-  public reportKeyList: string[] = [];
 
   get reportForm() {
-    // 使用 _generic_temporary 目的是为了不让每次点击新增都初始化，所以初始化携带 _generic_temporary: true 来判断，这里删除掉
-    this.$delete(this.data, "_generic_temporary");
-    this.reportKeyList = Object.keys(this.data);
     return this.data;
   }
 
@@ -56,7 +54,7 @@ export default class extends Vue {
   }
 
   public getLabel(index: number) {
-    let reportSetting = this.getReportSetting(index);
+    let reportSetting = this.getReportColSetting(index);
     return reportSetting?.reportCol || reportSetting?.jsonCol;
   }
 
@@ -74,7 +72,7 @@ export default class extends Vue {
   }
 
   // public columnWidth(index: number) {
-  //   let width = this.getReportSetting(index)?.detailColWidth;
+  //   let width = this.getReportColSetting(index)?.detailColWidth;
   //   if (width === -1) {
   //     return "auto";
   //   } else {
@@ -83,23 +81,22 @@ export default class extends Vue {
   // }
 
   public getComponent(index: number) {
-    let colType = this.getReportSetting(index)?.colType;
+    let colType = this.getReportColSetting(index)?.colType;
     let type = (constant.colTypeAndComponent as { [key: string]: any })[colType];
     if (type && isArray(type)) {
       return type[0];
     }
-    console.log(this.getReportSetting(index));
     return "";
   }
   public getComponentType(index: number) {
-    let colType = this.getReportSetting(index)?.colType;
+    let colType = this.getReportColSetting(index)?.colType;
     let type = (constant.colTypeAndComponent as { [key: string]: any })[colType];
     if (type && isArray(type)) {
       return type[1];
     }
   }
 
-  public getReportSetting(index: number) {
+  public getReportColSetting(index: number) {
     let obj = this.reportForm;
     let key = this.reportKeyList[index];
     let targetKey = `_${key}${REPORT_SETTING}`;

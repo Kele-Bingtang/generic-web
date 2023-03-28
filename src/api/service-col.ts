@@ -18,6 +18,7 @@ export declare module ServiceColModule {
     allowInsert: number;
     allowUpdate: number;
     allowFilter: number;
+    allowRequest: number;
     allowShowInReport: number;
     allowShowInDetail: number;
     displaySeq: number;

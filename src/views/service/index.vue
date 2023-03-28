@@ -110,7 +110,7 @@
         :status="operateStatus"
         :base-url="url"
         :table-name-list="tableNameList"
-        @confirm="handleServiceConfirmAdd"
+        @confirm="handleServiceConfirm"
         @cancel="serviceDrawer.visible = false"
       ></service-form>
     </drag-drawer>
@@ -123,7 +123,7 @@
       :with-header="reportDrawer.withHeader"
     >
       <report-form
-        :data="reportData"
+        :data="reportSetting"
         :status="operateStatus"
         :base-url="url"
         @confirm="handleReportConfirmAdd"
@@ -155,7 +155,7 @@ import { DataModule } from "@/store/modules/data";
 import { UserModule } from "@/store/modules/user";
 import message from "@/utils/message";
 import { Page } from "@/types/http";
-import { defaultReportData, queryOneReport, ReportModule, updateReport } from "@/api/report";
+import { defaultReportSetting, queryOneReport, ReportModule, updateReport } from "@/api/report";
 
 type Service = ServiceModule.Service;
 type ServiceInsert = ServiceModule.ServiceInsert;
@@ -176,7 +176,7 @@ export default class extends Vue {
   public loading = false;
   public paging = { ...paging };
   public serviceData: Array<Service> = [];
-  public reportData = { ...defaultReportData };
+  public reportSetting = { ...defaultReportSetting };
   public searchParams = {
     serviceName: "",
     serviceUrl: "",
@@ -287,7 +287,7 @@ export default class extends Vue {
     this.serviceDrawer.visible = true;
   }
 
-  public handleServiceConfirmAdd(form: Service, status: string) {
+  public handleServiceConfirm(form: Service, status: string) {
     let data: Partial<Service> = { ...form };
     let { username } = UserModule.userInfo;
     if (status === "add") {
@@ -328,7 +328,8 @@ export default class extends Vue {
     updateReport(data as ReportModule.ReportUpdate).then(res => {
       if (res.status === "success") {
         notification.success("更新报表成功！");
-        refreshPage(this);
+        this.initServiceList({ pageNo: 1, pageSize: 20 });
+        this.reportDrawer.visible = false;
       }
     });
   }
@@ -337,7 +338,8 @@ export default class extends Vue {
     insertService(form).then(res => {
       if (res.status === "success") {
         notification.success("添加接口成功！");
-        refreshPage(this);
+        this.initServiceList({ pageNo: 1, pageSize: 20 });
+        this.serviceDrawer.visible = false;
       }
     });
   }
@@ -346,7 +348,8 @@ export default class extends Vue {
     updateService(form).then(res => {
       if (res.status === "success") {
         notification.success("更新接口成功！");
-        refreshPage(this);
+        this.initServiceList({ pageNo: 1, pageSize: 20 });
+        this.serviceDrawer.visible = false;
       }
     });
   }
@@ -361,7 +364,7 @@ export default class extends Vue {
         deleteService(row).then(res => {
           if (res.status === "success") {
             notification.success("删除成功！");
-            refreshPage(this);
+            this.initServiceList({ pageNo: 1, pageSize: 20 });
           }
         });
       })
@@ -371,7 +374,7 @@ export default class extends Vue {
   public handleCommand(command: string, row: Service) {
     if (command === "handleEditReport") {
       queryOneReport({ serviceId: row.id }).then(res => {
-        this.reportData = res.data;
+        this.reportSetting = res.data;
         this.operateStatus = "edit";
         this.reportDrawer.visible = true;
       });

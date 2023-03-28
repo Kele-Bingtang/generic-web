@@ -12,6 +12,8 @@ export declare module ReportModule {
     allowDelete: number;
     allowFilter: number;
     allowExport: number;
+    allowRow: number;
+    dialogWidth: string;
     pageSize: number;
     chartType: number;
     createUser: string;
@@ -26,7 +28,7 @@ export declare module ReportModule {
   type ProjectSearch = Partial<Report>;
 }
 
-export const defaultReportData: Partial<ReportModule.Report> = {
+export const defaultReportSetting: Partial<ReportModule.Report> = {
   id: -1,
   reportTitle: "",
   description: "",

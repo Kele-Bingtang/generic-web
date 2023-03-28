@@ -20,15 +20,19 @@ service.interceptors.request.use(
     //   config.cancelToken = source.token;
     //   source.cancel("身份异常！")
     // }
-    if (config.method?.toLowerCase() === "post") {
+    if (config.method?.toLowerCase() === "get") {
+      config.paramsSerializer = function (params) {
+        return qs.stringify(params, { arrayFormat: "repeat" });
+      };
+    } else if (config.method?.toLowerCase() === "post" && config.headers) {
       if (config.params?._type) {
         if (config.params._type === "form") {
-          config.headers!["Content-Type"] = "application/x-www-form-urlencoded";
+          config.headers["Content-Type"] = "application/x-www-form-urlencoded";
           config.data = qs.stringify(config.data);
         } else if (config.params._type === "json") {
-          config.headers!["Content-Type"] = "application/json";
+          config.headers["Content-Type"] = "application/json";
         } else if (config.params._type === "file") {
-          config.headers!["Content-Type"] = "application/form-data";
+          config.headers["Content-Type"] = "application/form-data";
         }
       } else {
         // 可以给默认的 Content-Type

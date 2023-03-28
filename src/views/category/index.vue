@@ -104,7 +104,6 @@ export default class extends Vue {
   public dialogVisible = false;
   public project = { ...defaultProjectData };
   public serviceData: Array<ServiceModule.Service> = [];
-  public categoryList: Array<CategoryModule.Category> = [];
   public tabs: Array<CategoryTab> = [];
   public categoryForm = {
     categoryCode: "",
@@ -116,7 +115,7 @@ export default class extends Vue {
   };
 
   get url() {
-    return process.env.VUE_APP_BASE_URL + this.$route.query.baseUrl;
+    return process.env.VUE_APP_BASE_URL + "/generic-api" + this.$route.query.baseUrl;
   }
 
   get projectSecretKey() {
@@ -140,7 +139,6 @@ export default class extends Vue {
     queryCategoryList({ projectId: this.project.id }).then(res => {
       if (res.status === "success" && res.data.length > 0) {
         this.tabs = [];
-        this.categoryList = res.data;
         res.data.forEach((item, index) => {
           let category = {
             id: item.id,

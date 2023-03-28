@@ -46,16 +46,6 @@ export const defaultProjectData: Partial<ProjectModule.Project> = {
   databaseName: "",
 };
 
-export const queryProjectByConditions = (
-  condition: Array<Condition>
-): Promise<Response<Array<ProjectModule.Project>>> => {
-  return request({
-    url: "/genericProject/queryGenericProjectByConditions",
-    method: "get",
-    data: condition,
-  });
-};
-
 export const queryGenericOneProject = (secretKey: string): Promise<Response<ProjectModule.Project>> => {
   return request({
     url: `/genericProject/queryGenericOneProject/${secretKey}`,
@@ -84,20 +74,6 @@ export const queryProjectListPages = (
       ...project,
       ...page,
     },
-  });
-};
-
-export const queryProjectConditionsPages = (
-  condition: Array<Condition>,
-  page?: Page
-): Promise<Response<Array<ProjectModule.Project>>> => {
-  return request({
-    url: "/genericProject/queryGenericProjectConditionsPages",
-    method: "get",
-    params: {
-      ...page,
-    },
-    data: condition,
   });
 };
 

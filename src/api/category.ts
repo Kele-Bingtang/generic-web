@@ -64,20 +64,6 @@ export const queryListPages = (
   });
 };
 
-export const queryCategoryConditionsPages = (
-  condition: Array<Condition>,
-  page?: Page
-): Promise<Response<Array<CategoryModule.Category>>> => {
-  return request({
-    url: "/genericCategory/queryGenericCategoryConditionsPages",
-    method: "get",
-    params: {
-      ...page,
-    },
-    data: condition,
-  });
-};
-
 export const insertCategory = (
   category: CategoryModule.CategoryInsert
 ): Promise<Response<Array<CategoryModule.Category>>> => {

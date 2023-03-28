@@ -110,7 +110,6 @@ import {
 import { UserModule } from "@/store/modules/user";
 import notification from "@/utils/notification";
 import { DataModule } from "@/store/modules/data";
-import { refreshPage } from "@/utils/layout";
 
 type Project = ProjectModule.Project;
 
@@ -196,7 +195,7 @@ export default class extends Vue {
         insertProject(project as Project).then(res => {
           if (res.status === "success") {
             notification.success("新增成功！");
-            refreshPage(this);
+            this.initProject();
           }
           this.dialogVisible = false;
         });
@@ -211,7 +210,6 @@ export default class extends Vue {
     this.operateStatus = "edit";
     let { id, projectName, baseUrl, description, databaseName } = project;
     this.projectForm = { id, projectName, baseUrl, description, databaseName };
-    this.projectForm.modifyUser = UserModule.userInfo.username;
     this.$nextTick(() => {
       (this.$refs.projectForm as Form).clearValidate();
     });
@@ -223,12 +221,11 @@ export default class extends Vue {
         let project = {
           ...this.projectForm,
         };
-        project.createUser = UserModule.userInfo.username;
         project.modifyUser = UserModule.userInfo.username;
         updateProject(project as Project).then(res => {
           if (res.status === "success") {
             notification.success("更新成功！");
-            refreshPage(this);
+            this.initProject();
           }
           this.dialogVisible = false;
         });
@@ -261,7 +258,7 @@ export default class extends Vue {
         deleteProject(project).then(res => {
           if (res.data) {
             notification.success("删除成功！");
-            refreshPage(this);
+            this.initProject();
           }
         });
       })

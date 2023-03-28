@@ -24,7 +24,7 @@
         <p>{{ member.phone }}</p>
       </el-col>
       <el-col :lg="1" :md="1" :sm="1" class="item-info">
-        <p>{{ member.gender }}</p>
+        <p>{{ getGender(member.gender) }}</p>
       </el-col>
       <el-col :lg="3" :md="3" :sm="3" class="item-info">
         <p>{{ member.birthday }}</p>
@@ -105,6 +105,16 @@ export default class extends Vue {
       return true;
     }
     return false;
+  }
+
+  public getGender(gender: number) {
+    if (gender === 0) {
+      return "保密";
+    } else if (gender === 1) {
+      return "男";
+    } else if (gender === 2) {
+      return "女";
+    }
   }
 
   public handleSelect(roleCode: string, member: Member) {

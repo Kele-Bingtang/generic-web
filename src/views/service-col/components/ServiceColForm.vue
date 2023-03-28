@@ -51,6 +51,12 @@
             <el-option label="不允许" value="0"></el-option>
           </el-select>
         </el-form-item>
+        <el-form-item label="请求">
+          <el-select v-model="tempServiceCol.allowRequest" placeholder="请选择" class="select-item">
+            <el-option label="允许" value="1"></el-option>
+            <el-option label="不允许" value="0"></el-option>
+          </el-select>
+        </el-form-item>
         <el-form-item label="加密">
           <el-select v-model="tempServiceCol.dataEncrypt" placeholder="请选择" class="select-item">
             <el-option label="加密" value="1"></el-option>
@@ -154,6 +160,7 @@ export default class extends Vue {
     allowInsert: "1",
     allowUpdate: "1",
     allowFilter: "1",
+    allowRequest: "1",
     allowShowInReport: "1",
     allowShowInDetail: "1",
     colAlign: "0",
@@ -207,6 +214,7 @@ export default class extends Vue {
       allowInsert,
       allowUpdate,
       allowFilter,
+      allowRequest,
       allowShowInReport,
       allowShowInDetail,
       colAlign,
@@ -219,6 +227,7 @@ export default class extends Vue {
       allowInsert: allowInsert + "",
       allowUpdate: allowUpdate + "",
       allowFilter: allowFilter + "",
+      allowRequest: allowRequest + "",
       allowShowInReport: allowShowInReport + "",
       allowShowInDetail: allowShowInDetail + "",
       colAlign: colAlign + "",

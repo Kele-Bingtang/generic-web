@@ -64,6 +64,18 @@ const colTypeAndComponent = {
   Text: ["el-input", "textarea"],
 };
 
+const colTypeAndComponentTo = {
+  String: ["el-input", "text"],
+  Integer: ["el-input", "number"],
+  Float: ["el-input", "number"],
+  Double: ["el-input", "number"],
+  Date: ["el-date-picker", "daterange"],
+  DateTime: ["el-date-picker", "datetimerange"],
+  TimeStamp: ["el-date-picker", "datetimerange"],
+  Blob: ["el-input", "text"],
+  Text: ["el-input", "text"],
+};
+
 const serviceStatusType: { [propName: string]: string } = {
   0: "warning",
   1: "success",
@@ -82,4 +94,5 @@ export default {
   operateTitle,
   mysqlColTypeOptions,
   colTypeAndComponent,
+  colTypeAndComponentTo
 };

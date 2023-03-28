@@ -42,6 +42,9 @@ export default class extends Vue {
         UserModule.login({ ...this.ruleForm }).then(token => {
           if (token) {
             notification.success("登录成功！");
+            this.$nextTick(() => {
+              this.$router.push("/project/index");
+            });
           }
         });
       }

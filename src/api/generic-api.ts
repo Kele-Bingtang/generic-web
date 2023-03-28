@@ -1,16 +1,23 @@
 import request from "@/config/request";
 import { Page, Response } from "@/types/http";
+import { ServiceColModule } from "./service-col";
 
-export const queryGenericData = (fullUrl: string, secretKey: string, page?: Page): Promise<Response<any[]>> => {
+export const queryGenericData = (
+  fullUrl: string,
+  secretKey: string,
+  page?: Page,
+  searchParams?: { [key: string]: ServiceColModule.ServiceCol }
+): Promise<Response<any[]>> => {
   return request({
     url: fullUrl,
     method: "get",
     params: {
       _from: "report", // 如果是 report，则不仅返回数据，还返回对应的字段配置信息
       ...page,
+      ...searchParams,
     },
     headers: {
-      generic_secret_key: secretKey,
+      "Secret-Key": secretKey,
     },
   });
 };
@@ -25,7 +32,7 @@ export const operateGenericDataForm = (
     url: fullUrl,
     method: "post",
     headers: {
-      generic_secret_key: secretKey,
+      "Secret-Key": secretKey,
     },
     params: {
       _type: "form",

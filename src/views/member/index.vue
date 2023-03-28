@@ -31,7 +31,6 @@
             ref="infoSelection"
             :list="allUserInfo"
             id="username"
-            separator=" "
             multiple
             onlySearch
             @change="handleSelectMember"
@@ -42,12 +41,8 @@
               <span>-</span>
               <span>{{ option.email }}</span>
               <span style="float: right; color: #8492a6; font-size: 13px">
-                <el-tag v-if="option.status === '在线'" :type="getUserStatus(option.status)">
-                  {{ option.status }}
-                </el-tag>
-                <el-tag v-if="option.status === '离线'" :type="getUserStatus(option.status)">
-                  {{ option.status }}
-                </el-tag>
+                <el-tag v-if="option.status === 1" :type="getUserStatus(option.status)">在线</el-tag>
+                <el-tag v-if="option.status === 0" :type="getUserStatus(option.status)">离线</el-tag>
               </span>
             </template>
           </info-selection>
@@ -97,7 +92,7 @@ export type Member = Omit<UserInfoModule.User, "id" | "password"> & {
   name: "GenericMember",
   components: { MemberCard, InfoSelection },
 })
-export default class  extends Vue {
+export default class extends Vue {
   public memberList: Array<Member> = [];
   public project = { ...defaultProjectData };
   public isCreator = false; // 是否是项目的创建者
@@ -106,8 +101,8 @@ export default class  extends Vue {
   public allUserInfo: Array<UserInfoModule.User> = [];
   public showAddMember = false;
   public userStatus: { [key: string]: string } = {
-    在线: "success",
-    离线: "info",
+    0: "info",
+    1: "success",
   };
   public selectMember: string[] = []; // 选择的成员
 
