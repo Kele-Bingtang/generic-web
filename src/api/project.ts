@@ -1,8 +1,6 @@
-import request from "@/config/request";
-import { Condition, Page, Response } from "@/types/http";
-import { RequiredKey } from "@/utils/layout";
+import http from "@/config/request";
 
-export declare module ProjectModule {
+export declare namespace ProjectModule {
   interface Project {
     id: number;
     projectName: string;
@@ -28,9 +26,12 @@ export declare module ProjectModule {
 
   type ProjectInsert = Omit<Project, "id" | "secretKey" | "createTime" | "modifyTime">;
 
-  type ProjectUpdate = RequiredKey<Omit<Project, "secretKey" | "createUser" | "createTime" | "modifyTime">, "id">;
+  type ProjectUpdate = RequiredKeyPartialOther<
+    Omit<Project, "secretKey" | "createUser" | "createTime" | "modifyTime">,
+    "id"
+  >;
 
-  type ProjectDelete = RequiredKey<Project, "id">;
+  type ProjectDelete = RequiredKeyPartialOther<Project, "id">;
 
   type ProjectSearch = Partial<Project>;
 
@@ -46,29 +47,24 @@ export const defaultProjectData: Partial<ProjectModule.Project> = {
   databaseName: "",
 };
 
-export const queryGenericOneProject = (secretKey: string): Promise<Response<ProjectModule.Project>> => {
-  return request({
-    url: `/genericProject/queryGenericOneProject/${secretKey}`,
+export const queryGenericOneProject = (secretKey: string) => {
+  return http.request<http.Response<ProjectModule.Project>>({
+    url: `/project/queryOneProject/${secretKey}`,
     method: "get",
   });
 };
 
-export const queryProjectListOwner = (
-  project?: ProjectModule.UserProjectSearch
-): Promise<Response<Array<ProjectModule.Project>>> => {
-  return request({
-    url: "/genericProject/queryGenericProjectListOwner",
+export const queryProjectListOwner = (project?: ProjectModule.UserProjectSearch) => {
+  return http.request<http.Response<ProjectModule.Project[]>>({
+    url: "/project/queryProjectListOwner",
     method: "get",
     params: { ...project },
   });
 };
 
-export const queryProjectListPages = (
-  project?: ProjectModule.ProjectSearch,
-  page?: Page
-): Promise<Response<Array<ProjectModule.Project>>> => {
-  return request({
-    url: "/genericProject/queryGenericProjectListPages",
+export const queryProjectListPages = (project?: ProjectModule.ProjectSearch, page?: http.Page) => {
+  return http.request<http.Response<ProjectModule.Project[]>>({
+    url: "/project/queryProjectListPages",
     method: "get",
     params: {
       ...project,
@@ -77,32 +73,43 @@ export const queryProjectListPages = (
   });
 };
 
-export const insertProject = (
-  project: ProjectModule.ProjectInsert
-): Promise<Response<Array<ProjectModule.Project>>> => {
-  return request({
-    url: "/genericProject/insertGenericProject",
+export const insertProject = (project: ProjectModule.ProjectInsert, secretKey: string) => {
+  return http.request<http.Response<string>>({
+    url: "/project/insertProject",
     method: "post",
     data: project,
+    headers: {
+      secretKey,
+    },
   });
 };
 
-export const updateProject = (
-  project: ProjectModule.ProjectUpdate
-): Promise<Response<Array<ProjectModule.Project>>> => {
-  return request({
-    url: "/genericProject/updateGenericProject",
+export const updateProject = (project: ProjectModule.ProjectUpdate, secretKey: string) => {
+  return http.request<http.Response<string>>({
+    url: "/project/updateProject",
     method: "post",
     data: project,
+    headers: {
+      secretKey,
+    },
   });
 };
 
-export const deleteProject = (
-  project: ProjectModule.ProjectDelete
-): Promise<Response<Array<ProjectModule.Project>>> => {
-  return request({
-    url: "/genericProject/deleteGenericProjectById",
+export const deleteProject = (project: ProjectModule.ProjectDelete, secretKey: string) => {
+  return http.request<http.Response<string>>({
+    url: "/project/deleteProjectById",
     method: "post",
     data: project,
+    headers: {
+      secretKey,
+    },
+  });
+};
+
+export const queryDatabaseName = (databaseName?: string) => {
+  const url = databaseName ? `/project/queryDatabaseName/${databaseName}` : "/project/queryDatabaseName";
+  return http.request<http.Response<string[]>>({
+    url,
+    method: "get",
   });
 };

@@ -10,7 +10,7 @@
         <el-col :lg="16" :md="16" :sm="14" :xs="15">
           <div class="member-description">
             <p class="description-title">
-              <span style="color: var(--theme-color)">{{ project.projectName }}</span>
+              <span style="color: var(--el-color-primary)">{{ project.projectName }}</span>
               - 项目成员
             </p>
             <p class="description-content">项目成员管理，可以将已存在的用户添加到你的项目</p>
@@ -18,7 +18,14 @@
         </el-col>
         <el-col :lg="7" :md="5" :sm="7" :xs="4">
           <div class="member-action">
-            <el-button v-waves type="primary" icon="el-icon-plus" circle @click="handleAddMember"></el-button>
+            <el-button
+              v-waves
+              type="primary"
+              icon="Plus"
+              circle
+              @click="getOtherUserInfo"
+              :disabled="!isAdmin || !isCreator"
+            ></el-button>
           </div>
         </el-col>
       </el-row>
@@ -27,32 +34,35 @@
     <div class="member-user-card">
       <el-card v-if="showAddMember">
         <div class="add-member">
-          <info-selection
-            ref="infoSelection"
-            :list="allUserInfo"
-            id="username"
+          <el-select
+            v-model="selectMember"
+            filterable
+            clearable
             multiple
-            onlySearch
-            @change="handleSelectMember"
+            collapse-tags
+            :max-collapse-tags="2"
+            reserve-keyword
+            remote
+            :remote-method="remoteMethod"
             class="info-selection"
           >
-            <template #default="{ option }">
-              <span>{{ option.username }}</span>
+            <el-option v-for="item in queryUserInfo" :key="item.username" :value="item.username">
+              <span>{{ item.username }}</span>
               <span>-</span>
-              <span>{{ option.email }}</span>
-              <span style="float: right; color: #8492a6; font-size: 13px">
-                <el-tag v-if="option.status === 1" :type="getUserStatus(option.status)">在线</el-tag>
-                <el-tag v-if="option.status === 0" :type="getUserStatus(option.status)">离线</el-tag>
+              <span>{{ item.email }}</span>
+              <span style="float: right; font-size: 13px; color: #8492a6">
+                <el-tag v-if="item.status === 1" :type="getUserStatus(item.status + '')">在线</el-tag>
+                <el-tag v-if="item.status === 0" :type="getUserStatus(item.status + '')">离线</el-tag>
               </span>
-            </template>
-          </info-selection>
+            </el-option>
+          </el-select>
           <el-button v-waves type="primary" @click="confirmAddMember">确认添加</el-button>
-          <el-button v-waves type="danger" plain icon="el-icon-close" @click="showAddMember = false">取消</el-button>
+          <el-button v-waves type="danger" plain icon="Close" @click="showAddMember = false">取消</el-button>
         </div>
       </el-card>
 
       <el-card>
-        <member-card
+        <MemberCard
           v-for="item in memberList"
           :key="item.username"
           :member="item"
@@ -67,190 +77,209 @@
 </template>
 
 <script lang="ts">
-import { defaultProjectData, queryGenericOneProject } from "@/api/project";
-import {
-  addMember,
-  queryMemberInProject,
-  queryAllMemberNotInProject,
-  updateUserRole,
-  UserInfoModule,
-  removeOneMember,
-} from "@/api/user";
-import { DataModule } from "@/store/modules/data";
-import { UserModule } from "@/store/modules/user";
-import message from "@/utils/message";
-import notification from "@/utils/notification";
-import { Component, Vue } from "vue-property-decorator";
-import MemberCard from "./components/MemberCard.vue";
-import InfoSelection from "@/components/InfoSelection/index.vue";
-
 export type Member = Omit<UserInfoModule.User, "id" | "password"> & {
   roleSelect: string; // 修改角色的 code
 };
+</script>
 
-@Component({
-  name: "GenericMember",
-  components: { MemberCard, InfoSelection },
-})
-export default class extends Vue {
-  public memberList: Array<Member> = [];
-  public project = { ...defaultProjectData };
-  public isCreator = false; // 是否是项目的创建者
-  public isAdmin = false; // 是否是项目的管理员，创建者一定是管理者
+<script setup lang="ts" name="Member">
+import { defaultProjectData, queryGenericOneProject } from "@/api/project";
+import {
+  addMember,
+  queryAllMemberNotInProject,
+  queryGenericUserRole,
+  queryMemberInProject,
+  removeOneMember,
+  updateUserRole,
+  type UserInfoModule,
+} from "@/api/user";
+import { useDataStore } from "@/stores/data";
+import { useUserStore } from "@/stores/user";
+import { message } from "@/utils/layout/message";
+import { ElNotification } from "element-plus";
+import MemberCard from "./components/MemberCard.vue";
 
-  public allUserInfo: Array<UserInfoModule.User> = [];
-  public showAddMember = false;
-  public userStatus: { [key: string]: string } = {
-    0: "info",
-    1: "success",
-  };
-  public selectMember: string[] = []; // 选择的成员
+const userStatus: { [key: string]: string } = {
+  0: "info",
+  1: "success",
+};
 
-  async mounted() {
-    let { secretKey } = this.$route.params;
-    if (secretKey) {
-      await this.updateProject(secretKey);
-      this.initMember(secretKey);
-    } else {
-      message.error("无法获取成员信息，密钥无效！");
+const dataStore = useDataStore();
+const userStore = useUserStore();
+const route = useRoute();
+
+const memberList = ref<Member[]>([]);
+const project = ref({ ...defaultProjectData });
+const isCreator = ref(false); // 是否是项目的创建者
+const isAdmin = ref(false); // 是否是项目的管理员，创建者一定是管理者
+
+const allUserInfo = ref<UserInfoModule.User[]>([]);
+const queryUserInfo = ref<UserInfoModule.User[]>([]);
+const showAddMember = ref(false);
+const selectMember = ref<string[]>([]); // 选择的成员
+
+onMounted(async () => {
+  const { secretKey } = route.params;
+  if (secretKey) {
+    await initProject(secretKey as string);
+    initUserRole(secretKey as string);
+    initMember(secretKey as string);
+  } else message.error("无法获取成员信息，密钥无效！");
+});
+
+const initProject = async (secretKey: string) => {
+  // 如果不通过项目进来，而是链接进来，则需要更新
+  if (dataStore.project.id === -1) {
+    const res = await queryGenericOneProject(secretKey);
+    project.value = res.data;
+    dataStore.updateProject(res.data);
+  } else project.value = dataStore.project;
+};
+
+const initUserRole = (secretKey: string) => {
+  queryGenericUserRole(secretKey).then(res => {
+    if (res.status === "success") {
+      dataStore.updateUserRole(res.data);
     }
-  }
+  });
+};
 
-  public async updateProject(secretKey: string) {
-    // 如果不通过项目进来，而是链接进来，则需要更新
-    if (DataModule.project.id === -1) {
-      let res = await queryGenericOneProject(secretKey);
-      this.project = res.data;
-      DataModule.updateProject(res.data);
-    } else {
-      this.project = DataModule.project;
-    }
-  }
-
-  public initMember(secretKey: string) {
-    queryMemberInProject(secretKey).then(res => {
-      if (res.status === "success") {
-        this.memberList = res.data as unknown as Array<Member>;
-        this.memberList.forEach(member => {
-          // 修改角色需要
-          this.$set(member, "roleSelect", member.role.code);
-          let { username } = UserModule.userInfo;
-          let { createUser } = this.project;
-          // 找到自己
-          if (member.username === username) {
-            createUser === username ? (this.isCreator = true) : (this.isCreator = false);
-            member.role.code === "admin" ? (this.isAdmin = true) : (this.isAdmin = false);
-          }
-        });
-      }
-    });
-  }
-
-  public handleSelectPermission(roleCode: string, member: Member) {
-    let { username } = member;
-    updateUserRole(username, this.project.id as number, roleCode).then(res => {
-      if (res.status === "success") {
-        notification.success(res.data);
-      }
-    });
-  }
-
-  public handleAddMember() {
-    this.getOtherUserInfo();
-  }
-
-  public getOtherUserInfo() {
-    // 获取所有的用户列表
-    queryAllMemberNotInProject(this.project.secretKey as string).then(res => {
-      this.allUserInfo = res.data;
-    });
-    this.showAddMember = true;
-  }
-
-  public getUserStatus(status: string) {
-    return this.userStatus[status];
-  }
-
-  public handleSelectMember(selectValue: string[]) {
-    this.selectMember = selectValue;
-  }
-
-  public confirmAddMember() {
-    let usernameList: Array<{ username: string }> = [];
-    this.selectMember.forEach(item => {
-      usernameList.push({
-        username: item,
+const initMember = (secretKey: string) => {
+  queryMemberInProject(secretKey).then(res => {
+    if (res.status === "success") {
+      memberList.value = res.data as unknown as Member[];
+      memberList.value.forEach(member => {
+        // 修改角色需要
+        member.roleSelect = member.role.code;
+        const { username } = userStore.userInfo;
+        const { createUser } = project.value;
+        // 找到自己
+        if (member.username === username) {
+          createUser === username ? (isCreator.value = true) : (isCreator.value = false);
+          member.role.code === "admin" ? (isAdmin.value = true) : (isAdmin.value = false);
+        }
       });
-    });
-    addMember(this.project.id as number, usernameList).then(res => {
-      if (res.status === "success") {
-        this.initMember(this.project.secretKey as string);
-        this.getOtherUserInfo();
-        notification.success("添加成员成功");
-        (this.$refs.infoSelection as any).clearSelection();
-      }
-    });
-  }
+    }
+  });
+};
 
-  public handleRemoveMember(member: Member) {
-    removeOneMember(member.username, this.project.id as number).then(res => {
-      if (res.status === "success") {
-        this.initMember(this.project.secretKey as string);
-        // 只有打开添加成员下拉框，才重新获取成员，否则不请求，减少请求次数
-        this.showAddMember ? this.getOtherUserInfo() : "";
-        notification.success("删除成员成功");
-      }
+const remoteMethod = (query: string) => {
+  if (query) {
+    queryUserInfo.value = allUserInfo.value.filter(item => {
+      return (
+        item.username.toLowerCase().includes(query.toLowerCase()) ||
+        item.email.toLowerCase().includes(query.toLowerCase())
+      );
     });
+  } else {
+    queryUserInfo.value = [];
   }
-}
+};
+
+const handleSelectPermission = (roleCode: string, member: Member) => {
+  const { username } = member;
+  updateUserRole(username, project.value.id as number, roleCode).then(res => {
+    if (res.status === "success") {
+      ElNotification.success(res.message);
+    }
+  });
+};
+
+const getOtherUserInfo = () => {
+  // 获取所有的用户列表
+  queryAllMemberNotInProject(project.value.secretKey as string).then(res => {
+    allUserInfo.value = res.data;
+  });
+  showAddMember.value = true;
+};
+
+const getUserStatus = (status: string) => {
+  return userStatus[status] as "info" | "success";
+};
+
+const confirmAddMember = () => {
+  const usernameList: { username: string }[] = [];
+  selectMember.value.forEach(item => {
+    usernameList.push({
+      username: item,
+    });
+  });
+  addMember(project.value.id as number, usernameList).then(res => {
+    if (res.status === "success") {
+      initMember(project.value.secretKey as string);
+      getOtherUserInfo();
+      ElNotification.success("添加成员成功");
+      // infoSelection.value.clearSelection();
+    }
+  });
+};
+
+const handleRemoveMember = (member: Member) => {
+  removeOneMember(member.username, project.value.id as number).then(res => {
+    if (res.status === "success") {
+      initMember(project.value.secretKey as string);
+      // 只有打开添加成员下拉框，才重新获取成员，否则不请求，减少请求次数
+      showAddMember.value ? getOtherUserInfo() : "";
+      ElNotification.success("删除成员成功");
+    }
+  });
+};
 </script>
 
 <style lang="scss" scoped>
 .member-container {
   padding: 20px;
+
   .member-title-card {
     height: 100px;
     padding: 0 25px;
+
     .member-logo {
       width: 50px;
       height: 50px;
+      font-size: 28px;
+      line-height: 50px;
+      color: #ffffff;
+      text-align: center;
       background: #4579ee;
       border-radius: 4px;
       box-shadow: 0 10px 50px rgb(12 73 25 / 40%);
-      color: #fff;
-      font-size: 28px;
-      text-align: center;
-      line-height: 50px;
     }
+
     .member-description {
       .description-title {
         margin: 0;
         font-size: 18px;
         font-weight: 700;
-        color: rgba(0, 0, 0, 0.85);
         line-height: 1.9;
+        color: rgb(0 0 0 / 85%);
       }
+
       .description-content {
         margin: 0;
         font-size: 12px;
-        color: #9a9ca0;
         font-weight: 400;
+        color: #9a9ca0;
       }
     }
+
     .member-action {
       height: 50px;
       line-height: 50px;
       text-align: right;
     }
   }
+
   .member-user-card {
-    margin: 15px 0px;
+    margin: 15px 0;
+
     .add-member {
       width: 540px;
       margin: 10px auto;
+
       .info-selection {
-        width: 320px;
         display: inline-block;
+        width: 320px;
       }
     }
   }

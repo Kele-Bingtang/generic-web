@@ -9,7 +9,7 @@
     </div>
     <div class="form-content">
       <el-form
-        ref="dataForm"
+        ref="dataFormRef"
         :model="reportForm"
         :rules="rules"
         label-width="80px"
@@ -17,18 +17,18 @@
         :disabled="readonly"
       >
         <el-form-item prop="reportTitle" label="报表名称">
-          <el-input v-model="reportForm.reportTitle" placeholder="请输入字段名称"></el-input>
+          <el-input v-model.trim="reportForm.reportTitle" placeholder="请输入报表名称"></el-input>
         </el-form-item>
         <el-form-item prop="description" label="报表描述">
-          <el-input v-model="reportForm.description" placeholder="请输入请求名称"></el-input>
+          <el-input v-model.trim="reportForm.description" placeholder="请输入报表描述"></el-input>
         </el-form-item>
       </el-form>
 
       <el-form
-        ref="dataForm"
+        ref="dataFormRef"
         :model="reportForm"
         :rules="rules"
-        label-width="80px"
+        label-width="70px"
         class="report-form"
         :disabled="readonly"
         inline
@@ -44,106 +44,102 @@
           </el-select>
         </el-form-item>
         <el-form-item label="弹框宽度">
-          <el-input v-model="reportForm.dialogWidth" placeholder="请输入弹框宽度"></el-input>
+          <el-input v-model.trim="reportForm.dialogWidth" placeholder="请输入弹框宽度"></el-input>
         </el-form-item>
         <el-form-item label="添加">
-          <el-select v-model="tempReport.allowAdd" placeholder="请选择" class="select-item">
+          <el-select v-model="tempReport.allowAdd" placeholder="请选择">
             <el-option label="允许" value="1"></el-option>
             <el-option label="不允许" value="0"></el-option>
           </el-select>
         </el-form-item>
-        <el-form-item label="更新">
-          <el-select v-model="tempReport.allowEdit" placeholder="请选择" class="select-item">
+        <el-form-item label="编辑">
+          <el-select v-model="tempReport.allowEdit" placeholder="请选择">
             <el-option label="允许" value="1"></el-option>
             <el-option label="不允许" value="0"></el-option>
           </el-select>
         </el-form-item>
         <el-form-item label="删除">
-          <el-select v-model="tempReport.allowDelete" placeholder="请选择" class="select-item">
+          <el-select v-model="tempReport.allowDelete" placeholder="请选择">
             <el-option label="允许" value="1"></el-option>
             <el-option label="不允许" value="0"></el-option>
           </el-select>
         </el-form-item>
         <el-form-item label="查询">
-          <el-select v-model="tempReport.allowFilter" placeholder="请选择" class="select-item">
+          <el-select v-model="tempReport.allowFilter" placeholder="请选择">
             <el-option label="允许" value="1"></el-option>
             <el-option label="不允许" value="0"></el-option>
           </el-select>
         </el-form-item>
         <el-form-item label="导出">
-          <el-select v-model="tempReport.allowExport" placeholder="请选择" class="select-item">
+          <el-select v-model="tempReport.allowExport" placeholder="请选择">
             <el-option label="允许" value="1"></el-option>
             <el-option label="不允许" value="0"></el-option>
           </el-select>
         </el-form-item>
         <el-form-item label="行数">
-          <el-select v-model="tempReport.allowRow" placeholder="是否显示行数" class="select-item">
+          <el-select v-model="tempReport.allowRow" placeholder="是否显示行数">
             <el-option label="允许" value="1"></el-option>
             <el-option label="不允许" value="0"></el-option>
           </el-select>
         </el-form-item>
-        <el-form-item label="图表">
-          <el-select v-model="tempReport.chartType" placeholder="请选择" class="select-item">
+        <!-- <el-form-item label="图表">
+          <el-select v-model="tempReport.chartType" placeholder="请选择">
             <el-option label="不开启" value="0"></el-option>
             <el-option label="饼图" value="1"></el-option>
             <el-option label="折线图" value="2"></el-option>
           </el-select>
-        </el-form-item>
+        </el-form-item> -->
       </el-form>
     </div>
   </div>
 </template>
 
-<script lang="ts">
-import { ReportModule } from "@/api/report";
+<script setup lang="ts" name="ReportForm">
+import type { ReportModule } from "@/api/report";
 import constant from "@/config/constant";
-import { Form } from "element-ui";
-import { Component, Prop, Vue, Watch } from "vue-property-decorator";
-import CodeMirror from "@/components/CodeMirror/index.vue";
-import { commonRules } from "./service-form-rules";
-import { paging } from "@/components/Pagination/index.vue";
+import { commonRules } from "./reportFormRules";
+import { pageSetting } from "@/components/Pagination/index.vue";
+import type { FormInstance } from "element-plus";
 
-@Component({
-  name: "ReportForm",
-  components: { CodeMirror },
-})
-export default class extends Vue {
-  @Prop({ required: true })
-  public status!: string;
-  @Prop({ required: true })
-  public data!: ReportModule.Report;
-  @Prop({ required: true })
-  public baseUrl!: string;
+type Report = ReportModule.Report;
 
-  public operateTitle = constant.operateTitle;
-  public loading = false;
-  public tempReport = {
-    allowAdd: "1",
-    allowEdit: "1",
-    allowDelete: "1",
-    allowFilter: "1",
-    allowExport: "1",
-    allowRow: "0",
-    chartType: "0",
-  };
-  public rules = { ...commonRules };
+interface ReportFormProps {
+  status: string;
+  data: Report | Partial<Report>;
+  baseUrl: string;
+}
 
-  get reportForm() {
-    return this.data;
-  }
+interface ReportFormEmits {
+  (e: "confirm", reportForm: Report, status: string): void;
+}
 
-  get readonly() {
-    return this.status === "read";
-  }
+const props = defineProps<ReportFormProps>();
+const emits = defineEmits<ReportFormEmits>();
 
-  get pageSizeOptions() {
-    return paging.pageSizes;
-  }
+const rules = { ...commonRules };
 
-  @Watch("data", { immediate: true })
-  public onDataChange() {
-    let { allowAdd, allowEdit, allowDelete, allowFilter, allowRow, allowExport, chartType } = this.reportForm;
-    this.tempReport = {
+const dataFormRef = shallowRef<FormInstance>();
+const operateTitle = constant.operateTitle;
+const loading = ref(false);
+const tempReport = ref({
+  allowAdd: "1",
+  allowEdit: "1",
+  allowDelete: "1",
+  allowFilter: "1",
+  allowExport: "1",
+  allowRow: "0",
+  chartType: "0",
+});
+const pageSizeOptions = ref(pageSetting.pageSizes);
+
+const reportForm = computed(() => props.data);
+const readonly = computed(() => props.status === "read");
+
+watch(
+  () => props.data,
+  () => {
+    const { allowAdd, allowEdit, allowDelete, allowFilter, allowRow, allowExport, chartType } = reportForm.value;
+    tempReport.value = {
       allowAdd: allowAdd + "",
       allowEdit: allowEdit + "",
       allowDelete: allowDelete + "",
@@ -152,44 +148,47 @@ export default class extends Vue {
       allowRow: allowRow + "",
       chartType: chartType + "",
     };
-  }
+  },
+  { immediate: true }
+);
 
-  public handleConfirmSave() {
-    (this.$refs.dataForm as Form).validate(async valid => {
-      if (valid) {
-        let { reportForm, status } = this;
-        let { allowAdd, allowEdit, allowDelete, allowFilter, allowExport, chartType } = this.tempReport;
-        reportForm = {
-          ...reportForm,
-          allowAdd: Number(allowAdd),
-          allowEdit: Number(allowEdit),
-          allowDelete: Number(allowDelete),
-          allowFilter: Number(allowFilter),
-          allowExport: Number(allowExport),
-          chartType: Number(chartType),
-        };
-        this.$emit("confirm", reportForm, status);
-      }
-    });
-  }
-}
+const handleConfirmSave = () => {
+  dataFormRef.value?.validate(async valid => {
+    if (valid) {
+      const { allowAdd, allowEdit, allowDelete, allowFilter, allowExport, chartType } = tempReport.value;
+      const form = {
+        ...reportForm.value,
+        allowAdd: Number(allowAdd),
+        allowEdit: Number(allowEdit),
+        allowDelete: Number(allowDelete),
+        allowFilter: Number(allowFilter),
+        allowExport: Number(allowExport),
+        chartType: Number(chartType),
+      };
+      emits("confirm", form as Report, props.status);
+    }
+  });
+};
 </script>
 
 <style lang="scss" scoped>
 .report-form-component {
   height: 100%;
+
   .form-header {
     display: flex;
     margin-bottom: 32px;
-    padding: 20px 20px 0;
+
     .form-title {
       flex: 1;
     }
   }
+
   .form-content {
     display: flex;
     flex-direction: column;
     padding: 0 20px;
+
     .code-mirror {
       line-height: 20px;
     }

@@ -1,16 +1,15 @@
 @import "./variables.scss";
 @import "./transition.scss";
-@import "./svgicon.scss";
 
 /* Global scss */
 body {
   height: 100%;
+  margin: 0 !important;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", "Helvetica Neue", Helvetica,
+    "Hiragino Sans GB", "Microsoft YaHei", Arial, sans-serif;
   -moz-osx-font-smoothing: grayscale;
   -webkit-font-smoothing: antialiased;
-  font-family: -apple-system, BlinkMacSystemFont, PingFang SC, Segoe UI, Helvetica Neue, Helvetica, Hiragino Sans GB,
-    Microsoft YaHei, Arial, sans-serif;
-  overflow: hidden;
-  margin: 0 !important;
 }
 
 html {
@@ -22,8 +21,8 @@ html {
 }
 
 *,
-*:before,
-*:after {
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
@@ -31,8 +30,8 @@ a,
 a:focus,
 a:hover {
   color: inherit;
-  outline: none;
   text-decoration: none;
+  outline: none;
 }
 
 div:focus {
@@ -40,10 +39,10 @@ div:focus {
 }
 
 .clearfix {
-  &:after {
-    content: "";
+  &::after {
     display: table;
     clear: both;
+    content: "";
   }
 }
 
@@ -52,77 +51,133 @@ div:focus {
 }
 
 .no-padding {
-  padding: 0px !important;
+  padding: 0 !important;
 }
 
-// 表格
-.btn-info {
-  color: #5d5d5d;
-  &:active {
-    color: #82848a;
-  }
-  &:hover {
-    color: #a6a9ad;
-  }
-  [class*="el-icon-"] + span {
-    margin-left: 0 !important;
+/* flex */
+.flx-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flx-justify-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.flx-align-center {
+  display: flex;
+  align-items: center;
+}
+
+/* clearfix */
+.clearfix-after {
+  display: block;
+  height: 0;
+  overflow: hidden;
+  clear: both;
+  content: "";
+}
+
+/* 文字单行省略号 */
+.sle {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 文字多行省略号 */
+.mle {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+/* 文字多了自動換行 */
+.break-word {
+  word-break: break-all;
+  word-wrap: break-word;
+}
+
+/* scroll bar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #d3d3d3;
+  border-radius: 20px;
+  box-shadow: inset 0 0 0 white;
+}
+
+/* nprogress 样式 */
+#nprogress .bar {
+  background: var(--el-color-primary) !important;
+}
+
+#nprogress .spinner-icon {
+  border-top-color: var(--el-color-primary) !important;
+  border-left-color: var(--el-color-primary) !important;
+}
+
+#nprogress .peg {
+  box-shadow: 0 0 10px var(--el-color-primary), 0 0 5px var(--el-color-primary) !important;
+}
+
+/* 当前页面最大化 css */
+.main-maximize {
+  .aside-split,
+  .el-aside,
+  .el-header,
+  .el-footer,
+  .tabs-nav {
+    display: none !important;
   }
 }
 
-.btn-primary {
-  color: #409eff;
-  &:active {
-    color: #3a8ee6;
+/* 克隆并自定义 ElMessage 样式，不会影响 ElMessage 原本样式，在 src/utils/message.ts 中调用自定义样式 ElMessage 方法即可，暗黑模式在 src/style/dark.scss 文件进行了适配 */
+.antd-message {
+  padding: 10px 13px !important;
+  background: #ffffff !important;
+  border-width: 0 !important;
+  box-shadow: 0 3px 6px -4px #0000001f, 0 6px 16px #00000014, 0 9px 28px 8px #0000000d !important;
+
+  &.el-message.is-closable .el-message__content {
+    padding-right: 17px !important;
   }
-  &:hover {
-    color: #66b1ff;
+
+  & .el-message__content {
+    color: #000000d9 !important;
+    pointer-events: all !important;
+    background-image: initial !important;
   }
-  [class*="el-icon-"] + span {
-    margin-left: 0 !important;
+
+  & .el-message__icon {
+    margin-right: 8px !important;
+  }
+
+  & .el-message__closeBtn {
+    right: 9px !important;
+    border-radius: 4px;
+    outline: none;
+    transition: background-color 0.2s, color 0.2s;
+
+    &:hover {
+      background-color: rgb(0 0 0 / 6%);
+    }
   }
 }
 
-.btn-success {
-  color: #13ce66;
-  &:active {
-    color: #5daf34;
+.el-table {
+  .el-table__header th {
+    height: 45px;
+    font-size: 15px;
+    font-weight: bold;
+    color: var(--el-text-color-primary);
+    background: var(--el-fill-color-light);
   }
-  &:hover {
-    color: #85ce61;
-  }
-  [class*="el-icon-"] + span {
-    margin-left: 0 !important;
-  }
-}
-.btn-warning {
-  color: #ffba00;
-  &:active {
-    color: #cf9236;
-  }
-  &:hover {
-    color: #ebb563;
-  }
-  [class*="el-icon-"] + span {
-    margin-left: 0 !important;
-  }
-}
-.btn-danger {
-  color: #ff4949;
-  &:active {
-    color: #dd6161;
-  }
-  &:hover {
-    color: #f78989;
-  }
-  [class*="el-icon-"] + span {
-    margin-left: 0 !important;
-  }
-}
-
-// .el-table .cell {
-//   color: #333;
-// }
-
-.table-highlight-row {
-  background: #fafafa !important;
 }

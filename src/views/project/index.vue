@@ -20,54 +20,41 @@
               <div class="base-url">{{ item.baseUrl }}</div>
               <div class="description">{{ item.description }}</div>
               <template #footer>
-                <el-button
-                  type="text"
-                  icon="el-icon-view"
-                  class="btn-primary"
-                  @click="handleHeaderClick(item)"
-                ></el-button>
-                <el-button
-                  type="text"
-                  icon="el-icon-delete"
-                  class="btn-danger"
-                  @click="deleteProject(item)"
-                ></el-button>
-                <el-button
-                  type="text"
-                  icon="el-icon-setting"
-                  class="btn-warning"
-                  @click="editProject(item)"
-                ></el-button>
+                <el-button link type="primary" icon="View" @click="handleHeaderClick(item)"></el-button>
+                <el-button link type="danger" icon="Delete" @click="removeProject(item)"></el-button>
+                <el-button link type="warning" icon="Setting" @click="editProject(item)"></el-button>
               </template>
             </project-card>
           </el-col>
           <el-col :xs="12" :sm="12" :md="6" :lg="6" :xl="4">
-            <project-card :only-body="true" class="plus-project" @click.native="addProject">
-              <i class="el-icon-plus action"></i>
+            <project-card :only-body="true" class="plus-project" @click="addProject">
+              <el-icon class="action"><Plus /></el-icon>
             </project-card>
           </el-col>
         </el-row>
       </el-tab-pane>
     </el-tabs>
 
-    <el-dialog v-draggable-dialog :title="dialogTitle[operateStatus]" :visible.sync="dialogVisible" width="30%">
-      <el-form ref="projectForm" :model="projectForm" :rules="projectRules" label-width="110px">
+    <el-dialog draggable :title="dialogTitle[operateStatus]" v-model="dialogVisible" width="30%">
+      <el-form ref="projectFormRef" :model="projectForm" :rules="projectRules" label-width="110px">
         <el-form-item label="项目名称：" prop="projectName">
-          <el-input v-model="projectForm.projectName" placeholder="请输入项目名称"></el-input>
+          <el-input v-model.trim="projectForm.projectName" placeholder="请输入项目名称"></el-input>
         </el-form-item>
         <el-form-item label="接口基础路径" prop="baseUrl" class="item-base-url">
           <el-tooltip effect="dark" content="" placement="right">
-            <div slot="content" style="line-height: 1.5715">
-              接口基础路径为 '/' 开头有字母或 数
-              <br />
-              字 组成的字符串如：'/shop01' 不能
-              <br />
-              有多个 '/'
-            </div>
-            <i class="el-icon-question"></i>
+            <template #content>
+              <div style="line-height: 1.5715">
+                接口基础路径为 '/' 开头有字母或 数
+                <br />
+                字 组成的字符串如：'/shop01' 不能
+                <br />
+                有多个 '/'
+              </div>
+            </template>
+            <el-icon><QuestionFilled /></el-icon>
           </el-tooltip>
           ：
-          <el-input v-model="projectForm.baseUrl" placeholder="请输入接口基础路径" style="width: 384px"></el-input>
+          <el-input v-model.trim="projectForm.baseUrl" placeholder="请输入接口基础路径" style="width: 384px"></el-input>
         </el-form-item>
         <el-form-item label="项目描述：" prop="description">
           <el-input
@@ -78,233 +65,247 @@
           ></el-input>
         </el-form-item>
         <el-form-item label="数据库：" prop="databaseName">
-          <el-input v-model="projectForm.databaseName" placeholder="请输入数据库"></el-input>
+          <el-select v-model="projectForm.databaseName" filterable clearable placeholder="请选择接表名">
+            <el-option v-for="item in databaseNameList" :key="item" :label="item" :value="item"></el-option>
+          </el-select>
         </el-form-item>
       </el-form>
-      <span slot="footer" class="dialog-footer">
-        <el-button v-waves @click="dialogVisible = false">取 消</el-button>
-        <el-button
-          v-waves
-          type="primary"
-          @click="operateStatus === 'add' ? addProjectConfirm() : operateStatus === 'edit' ? editProjectConfirm() : ''"
-        >
-          确 定
-        </el-button>
-      </span>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button v-waves @click="dialogVisible = false">取 消</el-button>
+          <el-button v-waves type="primary" @click="operateProjectConfirm(operateStatus)">确 定</el-button>
+        </span>
+      </template>
     </el-dialog>
   </div>
 </template>
 
 <script lang="ts">
-import { Component, Vue } from "vue-property-decorator";
-import ProjectCard from "@/components/ProjectCard/index.vue";
-import { Form } from "element-ui";
-import {
-  insertProject,
-  ProjectModule,
-  queryProjectListOwner,
-  deleteProject,
-  updateProject,
-  defaultProjectData,
-} from "@/api/project";
-import { UserModule } from "@/store/modules/user";
-import notification from "@/utils/notification";
-import { DataModule } from "@/store/modules/data";
-
-type Project = ProjectModule.Project;
-
-type UserProjectSearch = ProjectModule.UserProjectSearch;
-
 export interface CommonTab {
   id?: number;
   label: string;
   name: string;
 }
+</script>
 
-@Component({ name: "GenericProject", components: { ProjectCard } })
-export default class extends Vue {
-  public activeName = "all";
-  public dialogVisible = false;
-  public operateStatus: "add" | "edit" | "" = "";
-  public dialogTitle: { [propName: string]: string } = {
-    add: "添加项目",
-    edit: "编辑项目",
-  };
-  public tabs: Array<CommonTab> = [
-    {
-      label: "我的项目",
-      name: "all",
-    },
-    {
-      label: "我创建的",
-      name: "create",
-    },
-    {
-      label: "我加入的",
-      name: "join",
-    },
-  ];
-  public projectList: Array<Project> = [];
-  public projectForm = { ...defaultProjectData };
+<script setup lang="ts" name="Project">
+import ProjectCard from "@/components/ProjectCard/index.vue";
+import {
+  defaultProjectData,
+  deleteProject,
+  insertProject,
+  queryDatabaseName,
+  queryProjectListOwner,
+  updateProject,
+  type ProjectModule,
+} from "@/api/project";
+import { useDataStore } from "@/stores/data";
+import { useUserStore } from "@/stores/user";
+import { ElMessageBox, ElNotification, type FormInstance, type TabPaneName } from "element-plus";
+import { useLayoutStore } from "@/stores/layout";
 
-  public projectRules = {
-    projectName: [{ required: true, message: "请输入项目名称", trigger: "change" }],
-    baseUrl: [{ required: true, message: "请输入接口基础路径", trigger: "change" }],
-    description: [{ required: true, message: "请输入项目描述", trigger: "change" }],
-  };
+type Project = ProjectModule.Project;
 
-  mounted() {
-    this.initProject();
-  }
+type UserProjectSearch = ProjectModule.UserProjectSearch;
 
-  public initProject(condition?: UserProjectSearch) {
-    queryProjectListOwner(condition).then(res => {
-      this.projectList = res.data;
+const dialogTitle: { [propName: string]: string } = {
+  add: "添加项目",
+  edit: "编辑项目",
+};
+const tabs: CommonTab[] = [
+  {
+    label: "我的项目",
+    name: "all",
+  },
+  {
+    label: "我创建的",
+    name: "create",
+  },
+  {
+    label: "我加入的",
+    name: "join",
+  },
+];
+const projectRules = {
+  projectName: [{ required: true, message: "请输入项目名称", trigger: "change" }],
+  baseUrl: [{ required: true, message: "请输入接口基础路径", trigger: "change" }],
+  description: [{ required: true, message: "请输入项目描述", trigger: "change" }],
+};
+
+const router = useRouter();
+const userStore = useUserStore();
+const layoutStore = useLayoutStore();
+const dataStore = useDataStore();
+
+const activeName = ref("all");
+const dialogVisible = ref(false);
+const operateStatus = ref<"add" | "edit" | "">("");
+const projectList = ref<Project[]>([]);
+const projectForm = ref({ ...defaultProjectData });
+const databaseNameList = ref<string[]>([]);
+const projectFormRef = shallowRef<FormInstance>();
+
+onMounted(() => {
+  initProject();
+});
+
+const initProject = (condition?: UserProjectSearch) => {
+  queryProjectListOwner(condition).then(res => {
+    if (res.status === "success") {
+      projectList.value = res.data;
+    }
+  });
+};
+
+const initDatabaseName = () => {
+  if (!databaseNameList.value.length) {
+    queryDatabaseName("my").then(res => {
+      databaseNameList.value = res.data;
     });
   }
+};
 
-  public switchTab(activeName: string, oldActiveName: string) {
-    if (activeName === oldActiveName) {
-      return;
-    }
-    if (activeName === "create") {
-      this.initProject({ enterType: 0 });
-    } else if (activeName === "join") {
-      this.initProject({ enterType: 1 });
+const switchTab = (activeName: TabPaneName, oldActiveName: TabPaneName) => {
+  if (activeName === oldActiveName) {
+    return;
+  }
+  if (activeName === "create") {
+    initProject({ enterType: 0 });
+  } else if (activeName === "join") {
+    initProject({ enterType: 1 });
+  } else {
+    initProject();
+  }
+};
+
+const addProject = () => {
+  dialogVisible.value = true;
+  operateStatus.value = "add";
+  initDatabaseName();
+  nextTick(() => {
+    projectFormRef.value?.clearValidate();
+  });
+};
+
+const operateProjectConfirm = (status: "add" | "edit" | "") => {
+  projectFormRef.value?.validate(valid => {
+    if (valid) {
+      const project = { ...projectForm.value };
+      const secretKey = project.secretKey || "";
+      delete project.secretKey;
+      project.modifyUser = userStore.userInfo.username;
+      if (status === "add") {
+        project.createUser = userStore.userInfo.username;
+        insertProject(project as Project, secretKey).then(res => {
+          if (res.status === "success") {
+            ElNotification.success("新增成功！");
+            initProject();
+          }
+          dialogVisible.value = false;
+        });
+      } else {
+        updateProject(project as Project, secretKey).then(res => {
+          if (res.status === "success") {
+            ElNotification.success("更新成功！");
+            initProject();
+          }
+          dialogVisible.value = false;
+        });
+      }
     } else {
-      this.initProject();
+      return false;
     }
-  }
+  });
+};
+const editProject = (project: Project) => {
+  dialogVisible.value = true;
+  operateStatus.value = "edit";
+  const { id, projectName, baseUrl, description, databaseName, secretKey } = project;
+  projectForm.value = { id, projectName, baseUrl, description, databaseName, secretKey };
+  initDatabaseName();
+  nextTick(() => {
+    projectFormRef.value?.clearValidate();
+  });
+};
 
-  public addProject() {
-    this.dialogVisible = true;
-    this.operateStatus = "add";
-    this.$nextTick(() => {
-      (this.$refs.projectForm as Form).clearValidate();
+const handleHeaderClick = (project: Project) => {
+  const { id, projectName, secretKey, baseUrl } = project;
+  if (id) {
+    dataStore.updateProject(project);
+    router.push({
+      path: `/project/details/${projectName}/${secretKey}`,
+      query: {
+        baseUrl: baseUrl,
+      },
     });
   }
+};
 
-  public addProjectConfirm() {
-    (this.$refs.projectForm as Form).validate(valid => {
-      if (valid) {
-        let project = {
-          ...this.projectForm,
-        };
-        project.createUser = UserModule.userInfo.username;
-        project.modifyUser = UserModule.userInfo.username;
-        insertProject(project as Project).then(res => {
-          if (res.status === "success") {
-            notification.success("新增成功！");
-            this.initProject();
-          }
-          this.dialogVisible = false;
-        });
-      } else {
-        return false;
-      }
-    });
-  }
-
-  public editProject(project: Project) {
-    this.dialogVisible = true;
-    this.operateStatus = "edit";
-    let { id, projectName, baseUrl, description, databaseName } = project;
-    this.projectForm = { id, projectName, baseUrl, description, databaseName };
-    this.$nextTick(() => {
-      (this.$refs.projectForm as Form).clearValidate();
-    });
-  }
-
-  public editProjectConfirm() {
-    (this.$refs.projectForm as Form).validate(valid => {
-      if (valid) {
-        let project = {
-          ...this.projectForm,
-        };
-        project.modifyUser = UserModule.userInfo.username;
-        updateProject(project as Project).then(res => {
-          if (res.status === "success") {
-            notification.success("更新成功！");
-            this.initProject();
-          }
-          this.dialogVisible = false;
-        });
-      } else {
-        return false;
-      }
-    });
-  }
-
-  public handleHeaderClick(project: Project) {
-    let { id, projectName, secretKey, baseUrl } = project;
-    if (id) {
-      DataModule.updateProject(project);
-      this.$router.push({
-        path: `/project/details/${projectName}/${secretKey}`,
-        query: {
-          baseUrl: baseUrl,
-        },
+const removeProject = (project: Project) => {
+  ElMessageBox.confirm("此操作将永久删除该项目, 是否继续?", "提示", {
+    confirmButtonText: "确定",
+    cancelButtonText: "取消",
+    type: "warning",
+  })
+    .then(() => {
+      const { projectName, secretKey } = project;
+      deleteProject(project, secretKey).then(async res => {
+        if (res.data) {
+          ElNotification.success("删除成功！");
+          await layoutStore.batchRemoveTab([`/project/details/${projectName}/${secretKey}`]);
+          initProject();
+        }
       });
-    }
-  }
-
-  public deleteProject(project: Project) {
-    this.$confirm("此操作将永久删除该项目, 是否继续?", "提示", {
-      confirmButtonText: "确定",
-      cancelButtonText: "取消",
-      type: "warning",
     })
-      .then(() => {
-        deleteProject(project).then(res => {
-          if (res.data) {
-            notification.success("删除成功！");
-            this.initProject();
-          }
-        });
-      })
-      .catch();
-  }
-}
+    .catch();
+};
 </script>
 
 <style lang="scss" scoped>
 .projects-container {
-  padding: 20px;
-  width: 100%;
-  height: 100%;
   .projects-tabs {
     width: 100%;
     height: 100%;
 
     .plus-project {
-      text-align: center;
       line-height: 220px;
-      color: #999;
+      color: #999999;
+      text-align: center;
       cursor: pointer;
+
       &:hover {
         background-color: #f2f2f2;
       }
-      .el-icon-plus.action {
+
+      .action {
+        display: inline-block;
         font-size: 60px;
+        font-style: normal;
+        color: inherit;
+        text-align: center;
+        text-transform: none;
+        text-rendering: optimizelegibility;
+        -webkit-font-smoothing: antialiased;
       }
     }
 
     .base-url {
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      margin-bottom: 10px;
-      font-size: 16px;
       margin-top: 0;
-      color: rgba(0, 0, 0, 0.85);
+      margin-bottom: 10px;
+      overflow: hidden;
+      font-size: 16px;
       font-weight: 500;
+      color: rgb(0 0 0 / 85%);
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
+
     .description {
       display: -webkit-box;
       -webkit-box-orient: vertical;
       -webkit-line-clamp: 3;
       overflow: hidden;
-      color: #999;
+      color: #999999;
     }
   }
 }
@@ -312,15 +313,6 @@ export default class extends Vue {
 
 <style lang="scss">
 .projects-container {
-  .action {
-    display: inline-block;
-    color: inherit;
-    font-style: normal;
-    text-align: center;
-    text-transform: none;
-    text-rendering: optimizelegibility;
-    -webkit-font-smoothing: antialiased;
-  }
   .el-dialog {
     .item-base-url label {
       padding-right: 5px;

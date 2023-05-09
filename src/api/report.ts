@@ -1,8 +1,6 @@
-import request from "@/config/request";
-import { Condition, Response } from "@/types/http";
-import { RequiredKey } from "@/utils/layout";
+import http from "@/config/request";
 
-export declare module ReportModule {
+export declare namespace ReportModule {
   interface Report {
     id: number;
     reportTitle: string;
@@ -23,7 +21,10 @@ export declare module ReportModule {
     serviceId: number;
   }
 
-  type ReportUpdate = RequiredKey<Omit<Report, "createUser" | "createTime" | "modifyTime" | "serviceId">, "id">;
+  type ReportUpdate = RequiredKeyPartialOther<
+    Omit<Report, "createUser" | "createTime" | "modifyTime" | "serviceId">,
+    "id"
+  >;
 
   type ProjectSearch = Partial<Report>;
 }
@@ -41,52 +42,26 @@ export const defaultReportSetting: Partial<ReportModule.Report> = {
   chartType: 0,
 };
 
-export const queryReportByConditions = (
-  condition: Array<Condition>
-): Promise<Response<Array<ReportModule.Report>>> => {
-  return request({
-    url: "/genericReport/queryGenericReportByConditions",
-    method: "get",
-    data: condition,
-  });
-};
-
-export const queryReportList = (report: ReportModule.ProjectSearch): Promise<Response<Array<ReportModule.Report>>> => {
-  return request({
-    url: "/genericReport/queryGenericReportList",
+export const queryReportList = (report: ReportModule.ProjectSearch) => {
+  return http.request<http.Response<ReportModule.Report[]>>({
+    url: "/report/queryReportList",
     method: "get",
     params: { ...report },
   });
 };
 
-export const queryOneReport= (report: ReportModule.ProjectSearch): Promise<Response<ReportModule.Report>> => {
-  return request({
-    url: "/genericReport/queryOneGenericReport",
+export const queryOneReport = (report: ReportModule.ProjectSearch) => {
+  return http.request<http.Response<ReportModule.Report>>({
+    url: "/report/queryOneReport",
     method: "get",
     params: { ...report },
   });
 };
 
-// export const insertReport = (report: ReportModule.Report): Promise<Response<Array<ReportModule.Report>>> => {
-//   return request({
-//     url: "/genericReport/insertGenericReport",
-//     method: "post",
-//     data: report,
-//   });
-// };
-
-export const updateReport = (report: ReportModule.ReportUpdate): Promise<Response<Array<ReportModule.Report>>> => {
-  return request({
-    url: "/genericReport/updateGenericReport",
+export const updateReport = (report: ReportModule.ReportUpdate) => {
+  return http.request<http.Response<string>>({
+    url: "/report/updateReport",
     method: "post",
     data: report,
   });
 };
-
-// export const deleteReport = (report: ReportModule.Report): Promise<Response<Array<ReportModule.Report>>> => {
-//   return request({
-//     url: "/genericReport/deleteGenericReportById",
-//     method: "post",
-//     data: report,
-//   });
-// };

@@ -1,33 +1,69 @@
 <template>
-  <div class="main-content">
-    <transition name="fade-transform" mode="out-in">
-      <!-- 内容由路由跳转实现 -->
-      <keep-alive :include="cachedTagList">
-        <router-view :key="key" />
-      </keep-alive>
-    </transition>
-  </div>
+  <Maximize v-if="settingsStore.maximize" />
+  <component :is="TabsNavComponents[tabsNavMode]" v-if="showTabsNav" />
+  <el-main>
+    <router-view v-slot="{ Component, route }">
+      <CustomTransition appear name="fade-transform">
+        <keep-alive :include="layoutStore.keepAliveName">
+          <component :is="Component" :key="route.path" v-if="isRouterShow" />
+        </keep-alive>
+      </CustomTransition>
+    </router-view>
+  </el-main>
 </template>
 
-<script lang="ts">
-import { LayoutModule } from "@/store/modules/layout";
-import { Component, Vue } from "vue-property-decorator";
+<script setup lang="ts" name="MainContent">
+import { useLayoutStore } from "@/stores/layout";
+import { useSettingsStore } from "@/stores/settings";
+import ClassicTabsNav from "@/layout/components/TabsNav/ClassicTabsNav/index.vue";
+import ElTabsNav from "@/layout/components/TabsNav/ElTabsNav/index.vue";
+import CustomTransition from "./components/CustomTransition.vue";
+import Maximize from "./components/Maximize.vue";
 
-@Component({})
-export default class MainContent extends Vue {
-  // 获取缓存的组件名
-  get cachedTagList() {
-    return LayoutModule.tagsNav.cachedTagList;
+export type RefreshFunction = (value?: boolean) => boolean;
+
+const layoutStore = useLayoutStore();
+const settingsStore = useSettingsStore();
+const tabsNavMode = computed(() => settingsStore.tabsNavMode);
+const showTabsNav = computed(() => settingsStore.showTabsNav);
+
+const TabsNavComponents: { [key: string]: Component } = {
+  classic: ClassicTabsNav,
+  popular: ElTabsNav,
+};
+
+// 刷新当前页面
+const isRouterShow = ref(true);
+const refreshCurrentPage: RefreshFunction = (value?: boolean) => {
+  if (value) {
+    isRouterShow.value = value;
+    return true;
   }
-  get key() {
-    return this.$route.path || this.$route.name;
-  }
-}
+  isRouterShow.value = false;
+  nextTick(() => {
+    isRouterShow.value = true;
+  });
+  return true;
+};
+provide("refresh", refreshCurrentPage);
+
+// 监听当前页是否最大化，动态添加 class
+watchEffect(() => {
+  const app = document.getElementById("app") as HTMLElement;
+  if (settingsStore.maximize) app?.classList.add("main-maximize");
+  else app?.classList.remove("main-maximize");
+});
 </script>
 
-<style lang="css" scoped>
-.main-content {
-  height: calc(100% - 38px);
-  overflow: hidden auto;
+<style lang="scss" scoped>
+.el-main {
+  box-sizing: border-box;
+  padding: 10px 12px;
+  overflow-x: hidden;
+  background-color: #f0f2f5;
+
+  &::-webkit-scrollbar {
+    background-color: #f0f2f5;
+  }
 }
 </style>

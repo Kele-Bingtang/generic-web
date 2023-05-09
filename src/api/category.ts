@@ -1,8 +1,6 @@
-import request from "@/config/request";
-import { Condition, Page, Response } from "@/types/http";
-import { RequiredKey } from "@/utils/layout";
+import http from "@/config/request";
 
-export declare module CategoryModule {
+export declare namespace CategoryModule {
   interface Category {
     id: number;
     categoryCode: string;
@@ -16,9 +14,12 @@ export declare module CategoryModule {
 
   type CategoryInsert = Omit<Category, "id" | "createTime" | "modifyTime">;
 
-  type CategoryUpdate = RequiredKey<Omit<Category, "createUser" | "createTime" | "modifyTime" | "projectId">, "id">;
+  type CategoryUpdate = RequiredKeyPartialOther<
+    Omit<Category, "createUser" | "createTime" | "modifyTime" | "projectId">,
+    "id"
+  >;
 
-  type CategoryDelete = RequiredKey<Category, "id">;
+  type CategoryDelete = RequiredKeyPartialOther<Category, "id">;
 
   type CategorySearch = Partial<Category>;
 }
@@ -30,32 +31,17 @@ export const defaultCategoryData: Partial<CategoryModule.Category> = {
   projectId: 0,
 };
 
-export const queryProjectByConditions = (
-  condition: Array<Condition>
-): Promise<Response<Array<CategoryModule.Category>>> => {
-  return request({
-    url: "/genericCategory/queryGenericCategoryByConditions",
-    method: "get",
-    data: condition,
-  });
-};
-
-export const queryCategoryList = (
-  category?: CategoryModule.CategorySearch
-): Promise<Response<Array<CategoryModule.Category>>> => {
-  return request({
-    url: "/genericCategory/queryGenericCategoryList",
+export const queryCategoryList = (category?: CategoryModule.CategorySearch) => {
+  return http.request<http.Response<CategoryModule.Category[]>>({
+    url: "/category/queryCategoryList",
     method: "get",
     params: { ...category },
   });
 };
 
-export const queryListPages = (
-  page?: Page,
-  category?: CategoryModule.CategorySearch
-): Promise<Response<Array<CategoryModule.Category>>> => {
-  return request({
-    url: "/genericCategory/queryGenericCategoryConditionsPages",
+export const queryListPages = (page?: http.Page, category?: CategoryModule.CategorySearch) => {
+  return http.request<http.Response<CategoryModule.Category[]>>({
+    url: "/category/queryCategoryConditionsPages",
     method: "get",
     params: {
       ...category,
@@ -64,31 +50,25 @@ export const queryListPages = (
   });
 };
 
-export const insertCategory = (
-  category: CategoryModule.CategoryInsert
-): Promise<Response<Array<CategoryModule.Category>>> => {
-  return request({
-    url: "/genericCategory/insertGenericCategory",
+export const insertCategory = (category: CategoryModule.CategoryInsert) => {
+  return http.request<http.Response<string>>({
+    url: "/category/insertCategory",
     method: "post",
     data: category,
   });
 };
 
-export const updateCategory = (
-  category: CategoryModule.CategoryUpdate
-): Promise<Response<Array<CategoryModule.Category>>> => {
-  return request({
-    url: "/genericCategory/updateGenericCategory",
+export const updateCategory = (category: CategoryModule.CategoryUpdate) => {
+  return http.request<http.Response<string>>({
+    url: "/category/updateCategory",
     method: "post",
     data: category,
   });
 };
 
-export const deleteCategory = (
-  category: CategoryModule.CategoryDelete
-): Promise<Response<Array<CategoryModule.Category>>> => {
-  return request({
-    url: "/genericCategory/deleteGenericCategoryById",
+export const deleteCategory = (category: CategoryModule.CategoryDelete) => {
+  return http.request<http.Response<string>>({
+    url: "/category/deleteCategoryById",
     method: "post",
     data: category,
   });

@@ -4,18 +4,19 @@
       <div class="btn-content">
         <el-input v-model="searchParams.serviceName" placeholder="接口名称" style="width: 200px" />
         <el-input v-model="searchParams.serviceUrl" placeholder="接口地址" style="width: 200px; margin-left: 10px" />
+        <el-button v-waves type="primary" icon="Search" @click="handleSearchService()" style="margin-left: 10px">
+          查询
+        </el-button>
+        <el-button v-waves icon="Refresh" @click="handleReset">重置</el-button>
+        <el-button v-waves type="warning" icon="Upload" style="float: right" @click="handleExport">导出</el-button>
         <el-button
           v-waves
           type="primary"
-          icon="el-icon-search"
-          @click="handleSearchService()"
-          style="margin-left: 10px"
+          icon="Plus"
+          @click="handleAddService()"
+          style="float: right"
+          :disabled="isVisitor"
         >
-          查询
-        </el-button>
-        <el-button v-waves icon="el-icon-refresh" @click="handleReset">重置</el-button>
-        <el-button v-waves type="warning" icon="el-icon-upload2" style="float: right">导出</el-button>
-        <el-button v-waves type="primary" icon="el-icon-plus" @click="handleAddService()" style="float: right">
           添加
         </el-button>
       </div>
@@ -30,62 +31,62 @@
         style="width: 100%"
         v-loading="loading"
         ref="table"
+        :tooltip-effect="settings.tooltipEffect"
       >
         <el-table-column type="selection" width="55"></el-table-column>
-        <el-table-column prop="serviceName" label="接口名称" width="180px">
-          <template slot-scope="{ row }">
-            <el-button type="text" @click="toServiceCol(row)">{{ row.serviceName }}</el-button>
+        <el-table-column prop="serviceName" label="接口名称" width="180px" show-overflow-tooltip>
+          <template #default="{ row }">
+            <el-button link type="primary" @click="toServiceCol(row)">{{ row.serviceName }}</el-button>
           </template>
         </el-table-column>
-        <el-table-column prop="reportTitle" label="报表名称" width="180px">
-          <template slot-scope="{ row }">
-            <el-button type="text" @click="toReport(row)">{{ row.reportTitle }}</el-button>
+        <el-table-column prop="reportTitle" label="报表名称" width="180px" show-overflow-tooltip>
+          <template #default="{ row }">
+            <el-button link type="primary" @click="toReport(row)">{{ row.reportTitle }}</el-button>
           </template>
         </el-table-column>
         <el-table-column prop="status" label="接口状态" width="100px">
-          <template slot-scope="{ row }">
+          <template #default="{ row }">
             <el-tag :type="filterStatusTagType(row.status)">{{ row.status === 0 ? "禁用" : "启用" }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="serviceUrl" label="接口地址">
-          <template slot-scope="{ row }">
+        <el-table-column prop="serviceUrl" label="接口地址" show-overflow-tooltip>
+          <template #default="{ row }">
             <el-tooltip effect="dark" content="复制接口相对地址" placement="top">
-              <el-tag type="info" v-clipboard:copy="row.serviceUrl" v-clipboard:success="onSuccess">
+              <el-tag type="info" v-copy="row.serviceUrl">
                 {{ row.serviceUrl }}
-                <i class="el-icon-document-copy"></i>
+                <i class="DocumentCopy"></i>
               </el-tag>
             </el-tooltip>
           </template>
         </el-table-column>
-        <el-table-column prop="serviceDesc" label="接口描述"></el-table-column>
+        <el-table-column prop="serviceDesc" label="接口描述" show-overflow-tooltip></el-table-column>
         <el-table-column prop="createTime" label="创建时间"></el-table-column>
 
-        <el-table-column label="操作" width="240px">
-          <template slot-scope="{ row }">
-            <el-button type="text" icon="el-icon-search" @click="handleReadService(row)" class="btn-info">
-              查看
+        <el-table-column label="操作" width="280px">
+          <template #default="{ row }">
+            <el-button link type="info" icon="Search" @click="handleReadService(row)">查看</el-button>
+            <el-button link type="primary" icon="EditPen" @click="handleEditService(row)" :disabled="isVisitor">
+              编辑
             </el-button>
-            <el-button type="text" icon="el-icon-edit" @click="handleEditService(row)">编辑</el-button>
-            <el-button type="text" icon="el-icon-delete" @click="handleDeleteService(row)" class="btn-danger">
+            <el-button link type="danger" icon="Delete" @click="handleDeleteService(row)" :disabled="isVisitor">
               删除
             </el-button>
-            <el-dropdown @command="command => handleCommand(command, row)">
-              <span style="margin-left: 5px">
-                <i class="el-icon-d-arrow-right"></i>
-                更多
-              </span>
-              <el-dropdown-menu slot="dropdown">
-                <el-dropdown-item command="handleEditReport" icon="el-icon-edit">报表编辑</el-dropdown-item>
-                <el-dropdown-item command="handleCopyFullUrl" icon="el-icon-document-copy">
-                  复制完整链接
-                </el-dropdown-item>
-              </el-dropdown-menu>
+            <el-dropdown @command="command => handleCommand(command, row)" style="vertical-align: middle">
+              <el-button link type="info" icon="ArrowRight" @click="() => {}">更多</el-button>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item command="handleEditReport" icon="Edit" :disabled="isVisitor">
+                    报表编辑
+                  </el-dropdown-item>
+                  <el-dropdown-item command="handleCopyFullUrl" icon="DocumentCopy">复制完整链接</el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
             </el-dropdown>
           </template>
         </el-table-column>
       </el-table>
 
-      <pagination
+      <Pagination
         v-show="serviceData.length > 0"
         :total="serviceData.length"
         :paging="paging"
@@ -94,312 +95,379 @@
     </template>
     <template v-else>
       <el-empty>
-        <el-button v-waves icon="el-icon-plus" @click="handleAddService()">创建接口</el-button>
+        <el-button v-waves icon="Plus" @click="handleAddService()" :disabled="isVisitor">创建接口</el-button>
       </el-empty>
     </template>
 
-    <drag-drawer
-      :visible.sync="serviceDrawer.visible"
+    <DragDrawer
+      v-model:visible="serviceDrawer.visible"
       :placement="serviceDrawer.placement"
-      :width.sync="serviceDrawer.width"
+      v-model:width="serviceDrawer.width"
       :draggable="serviceDrawer.draggable"
       :with-header="serviceDrawer.withHeader"
+      :close-on-click-modal="false"
     >
-      <service-form
+      <ServiceForm
         :data="operateRow"
         :status="operateStatus"
         :base-url="url"
-        :table-name-list="tableNameList"
+        :table-view-name-list="tableViewNameList"
         @confirm="handleServiceConfirm"
         @cancel="serviceDrawer.visible = false"
-      ></service-form>
-    </drag-drawer>
+      ></ServiceForm>
+    </DragDrawer>
 
-    <drag-drawer
-      :visible.sync="reportDrawer.visible"
+    <DragDrawer
+      v-model:visible="reportDrawer.visible"
       :placement="reportDrawer.placement"
-      :width.sync="reportDrawer.width"
+      v-model:width="reportDrawer.width"
       :draggable="reportDrawer.draggable"
       :with-header="reportDrawer.withHeader"
+      :close-on-click-modal="false"
     >
-      <report-form
+      <ReportForm
         :data="reportSetting"
         :status="operateStatus"
         :base-url="url"
         @confirm="handleReportConfirmAdd"
         @cancel="reportDrawer.visible = false"
-      ></report-form>
-    </drag-drawer>
+      ></ReportForm>
+    </DragDrawer>
   </div>
 </template>
 
-<script lang="ts">
-import { Component, Prop, Vue } from "vue-property-decorator";
-import Pagination, { Paging, paging } from "@/components/Pagination/index.vue";
+<script setup lang="ts" name="Service">
+import { defaultReportSetting, queryOneReport, updateReport, type ReportModule } from "@/api/report";
 import {
   defaultServiceData,
   deleteService,
   insertService,
   queryServiceListPages,
-  queryTableName,
-  ServiceModule,
+  queryTableViewName,
   updateService,
+  type ServiceModule,
 } from "@/api/service";
+import Pagination, { pageSetting, type Paging } from "@/components/Pagination/index.vue";
 import constant from "@/config/constant";
+import { useDataStore } from "@/stores/data";
+import { useUserStore } from "@/stores/user";
+import { message } from "@/utils/layout/message";
+import { ElMessageBox, ElNotification } from "element-plus";
+import useClipboard from "vue-clipboard3";
 import DragDrawer from "@/components/DragDrawer/index.vue";
-import ServiceForm from "./components/ServiceForm.vue";
-import ReportForm from "./components/ReportForm.vue";
-import notification from "@/utils/notification";
-import { refreshPage } from "@/utils/layout";
-import { DataModule } from "@/store/modules/data";
-import { UserModule } from "@/store/modules/user";
-import message from "@/utils/message";
-import { Page } from "@/types/http";
-import { defaultReportSetting, queryOneReport, ReportModule, updateReport } from "@/api/report";
+import ServiceForm from "./components/serviceForm.vue";
+import ReportForm from "./components/reportForm.vue";
+import { exportJsonToExcel, formatJsonToArray } from "@/utils/excel";
+import settings from "@/config/settings";
+import { useLayoutStore } from "@/stores/layout";
+
+export interface TableView {
+  label: string;
+  options: string[];
+}
 
 type Service = ServiceModule.Service;
 type ServiceInsert = ServiceModule.ServiceInsert;
 type ServiceUpdate = ServiceModule.ServiceUpdate;
 
-@Component({
-  name: "GenericService",
-  components: { Pagination, DragDrawer, ServiceForm, ReportForm },
-})
-export default class extends Vue {
-  @Prop({ required: true })
-  public categoryId!: number;
+const props = defineProps<{ categoryId: number }>();
 
-  public row!: Service;
+const router = useRouter();
+const route = useRoute();
+const layoutStore = useLayoutStore();
+const userStore = useUserStore();
+const dataStore = useDataStore();
+const { toClipboard } = useClipboard();
 
-  public tableKey = 0;
-  public showAddress = false;
-  public loading = false;
-  public paging = { ...paging };
-  public serviceData: Array<Service> = [];
-  public reportSetting = { ...defaultReportSetting };
-  public searchParams = {
-    serviceName: "",
-    serviceUrl: "",
-  };
-  public statusOptions = constant.serviceStatusOptions;
-  public operateStatus = "";
-  public rules = {
-    date: [{ required: true, message: "date is required", trigger: "change" }],
-    name: [{ required: true, message: "name is required", trigger: "change" }],
-    title: [{ required: true, message: "title is required", trigger: "blur" }],
-  };
-  public operateRow = { ...defaultServiceData };
-  public serviceDrawer = {
-    visible: false,
-    placement: "right",
-    width: 700,
-    draggable: true,
-    withHeader: false,
-  };
-  public reportDrawer = {
-    visible: false,
-    placement: "right",
-    width: 700,
-    draggable: true,
-    withHeader: false,
-  };
-  public tableNameList: string[] = [];
+const tableKey = ref(0);
+const loading = ref(false);
+const paging = reactive({ ...pageSetting });
+const serviceData = ref<Service[]>([]);
+const reportSetting = ref({ ...defaultReportSetting });
+const searchParams = reactive({
+  serviceName: "",
+  serviceUrl: "",
+});
+const operateStatus = ref("");
 
-  get url() {
-    return process.env.VUE_APP_BASE_URL + "/generic-api" + this.$route.query.baseUrl;
-  }
+const operateRow = ref({ ...defaultServiceData });
+const serviceDrawer = reactive({
+  visible: false,
+  placement: "right",
+  width: 700,
+  draggable: true,
+  withHeader: false,
+});
+const reportDrawer = reactive({
+  visible: false,
+  placement: "right",
+  width: 700,
+  draggable: true,
+  withHeader: false,
+});
+const tableViewNameList = ref<TableView[]>([]);
 
-  mounted() {
-    this.loading = false;
-    this.initServiceList({ pageNo: 1, pageSize: 20 });
-    this.initTableNameList();
-  }
+const url = computed(() => import.meta.env.VITE_API_URL + "/generic-api" + route.query.baseUrl);
+const isVisitor = computed(() => dataStore.isVisitor);
 
-  public initServiceList(page?: Page) {
-    let { project } = DataModule;
-    let isSuccess = queryServiceListPages(page, { projectId: project.id, categoryId: this.categoryId }).then(res => {
-      if (res.status === "success") {
-        this.serviceData = res.data;
-        return true;
-      } else {
-        return false;
-      }
+onMounted(() => {
+  loading.value = false;
+  initServiceList({ pageNo: 1, pageSize: 20 });
+});
+
+const fullPath = route.fullPath;
+onBeforeUnmount(() => {
+  // 关闭所有相关的页面
+  const pathList = layoutStore.tabNavList.map(item => item.path);
+  if (!pathList.includes(fullPath)) {
+    serviceData.value.forEach(item => {
+      layoutStore.batchRemoveTab([
+        `/project/service-col/${item.serviceName}/${item.id}`,
+        `/project/report/${item.reportTitle}/${item.id}/${dataStore.project.secretKey}`,
+      ]);
     });
-    return isSuccess;
   }
+});
 
-  public initTableNameList() {
-    let { project } = DataModule;
+const initServiceList = (page?: http.Page) => {
+  const { project } = dataStore;
+  const isSuccess = queryServiceListPages(page, { projectId: project.id, categoryId: props.categoryId }).then(res => {
+    if (res.status === "success") {
+      serviceData.value = res.data;
+      return true;
+    } else {
+      return false;
+    }
+  });
+  return isSuccess;
+};
+
+const initTableViewNameList = () => {
+  if (!Object.keys(tableViewNameList.value).length) {
+    const { project } = dataStore;
     if (project.databaseName) {
-      queryTableName(project.databaseName).then(res => {
-        this.tableNameList = res.data;
+      queryTableViewName(project.databaseName).then(res => {
+        if (res.status === "success") {
+          const tableList = res.data.table;
+          const viewList = res.data.view;
+          tableViewNameList.value = [
+            {
+              label: "table",
+              options: tableList,
+            },
+            {
+              label: "view",
+              options: viewList,
+            },
+          ];
+        }
       });
     }
   }
+};
 
-  public filterStatusTagType(status: number) {
-    return constant.serviceStatusType[status];
-  }
-  public onSuccess() {
-    message.success("复制成功！");
-  }
+const filterStatusTagType = (status: number) => {
+  return constant.serviceStatusType[status] as "warning" | "success";
+};
 
-  // 查询数据
-  public handleSearchService() {
-    this.loading = true;
-    let { serviceName, serviceUrl } = this.searchParams;
-    if (serviceName === "" && serviceUrl === "") {
-      this.loading = false;
-      this.initServiceList();
-      return;
+const onSuccess = () => {
+  message.success("复制成功！");
+};
+
+// 查询数据
+const handleSearchService = () => {
+  loading.value = true;
+  const { serviceName, serviceUrl } = searchParams;
+  if (serviceName === "" && serviceUrl === "") {
+    loading.value = false;
+    initServiceList();
+    return;
+  }
+  queryServiceListPages({ pageNo: 1, pageSize: 20 }, { serviceName, serviceUrl }).then(res => {
+    if (res.status === "success") {
+      serviceData.value = res.data;
     }
-    queryServiceListPages({ pageNo: 1, pageSize: 20 }, { serviceName, serviceUrl }).then(res => {
-      if (res.status === "success") {
-        this.serviceData = res.data;
-      }
-    });
-    this.loading = false;
-  }
+  });
+  loading.value = false;
+};
 
-  public handleReset() {
-    this.initServiceList().then(isSuccess => {
-      if (isSuccess) {
-        notification.success("重置成功！");
-      }
-    });
-  }
-
-  public handleAddService() {
-    this.operateRow = { ...defaultServiceData };
-    this.operateStatus = "add";
-    this.serviceDrawer.visible = true;
-  }
-
-  public handleReadService(row: Service) {
-    this.operateRow = Object.assign({}, row);
-    this.operateStatus = "read";
-    this.serviceDrawer.visible = true;
-  }
-
-  public handleEditService(row: Service) {
-    this.operateRow = Object.assign({}, row);
-    this.operateStatus = "edit";
-    this.serviceDrawer.visible = true;
-  }
-
-  public handleServiceConfirm(form: Service, status: string) {
-    let data: Partial<Service> = { ...form };
-    let { username } = UserModule.userInfo;
-    if (status === "add") {
-      // 删除 Insert 不允许的数据
-      delete data.id;
-      delete data.createTime;
-      delete data.modifyTime;
-      // 添加 Insert 需要的其他数据
-      data.fullUrl = this.url + data.serviceUrl;
-      data.projectId = DataModule.project.id;
-      data.categoryId = DataModule.category.id;
-      data.createUser = username;
-      data.modifyUser = username;
-      this.addServiceData(data as ServiceInsert);
-    } else if (status === "edit") {
-      // 删除 Update 不允许的数据
-      delete data.createUser;
-      delete data.createTime;
-      delete data.modifyTime;
-      delete data.projectId;
-      delete data.categoryId;
-      // 添加 Update 需要的其他数据
-      data.modifyUser = username;
-      this.editServiceData(data as ServiceUpdate);
+const handleReset = () => {
+  initServiceList().then(isSuccess => {
+    if (isSuccess) {
+      ElNotification.success("重置成功！");
     }
-  }
+  });
+};
 
-  public handleReportConfirmAdd(form: ReportModule.Report, status: string) {
-    let data: Partial<ReportModule.Report> = { ...form };
-    let { username } = UserModule.userInfo;
+const handleAddService = () => {
+  operateRow.value = { ...defaultServiceData } as Service;
+  operateStatus.value = "add";
+  serviceDrawer.visible = true;
+  initTableViewNameList();
+};
+
+const handleReadService = (row: Service) => {
+  operateRow.value = Object.assign({}, row);
+  operateStatus.value = "read";
+  serviceDrawer.visible = true;
+  initTableViewNameList();
+};
+
+const handleEditService = (row: Service) => {
+  operateRow.value = Object.assign({}, row);
+  operateStatus.value = "edit";
+  serviceDrawer.visible = true;
+  initTableViewNameList();
+};
+
+const handleServiceConfirm = (form: Service, status: string) => {
+  const data: Partial<Service> = { ...form };
+  const { username } = userStore.userInfo;
+  if (status === "add") {
+    // 删除 Insert 不允许的数据
+    delete data.id;
+    delete data.createTime;
+    delete data.modifyTime;
+    // 添加 Insert 需要的其他数据
+    data.fullUrl = url.value + data.serviceUrl;
+    data.projectId = dataStore.project.id;
+    data.categoryId = dataStore.category.id;
+    data.createUser = username;
+    data.modifyUser = username;
+    addServiceData(data as ServiceInsert);
+  } else if (status === "edit") {
     // 删除 Update 不允许的数据
     delete data.createUser;
     delete data.createTime;
     delete data.modifyTime;
-    delete data.serviceId;
+    delete data.projectId;
+    delete data.categoryId;
     // 添加 Update 需要的其他数据
     data.modifyUser = username;
-    updateReport(data as ReportModule.ReportUpdate).then(res => {
-      if (res.status === "success") {
-        notification.success("更新报表成功！");
-        this.initServiceList({ pageNo: 1, pageSize: 20 });
-        this.reportDrawer.visible = false;
-      }
-    });
+    editServiceData(data as ServiceUpdate);
   }
+};
 
-  public addServiceData(form: ServiceInsert) {
-    insertService(form).then(res => {
-      if (res.status === "success") {
-        notification.success("添加接口成功！");
-        this.initServiceList({ pageNo: 1, pageSize: 20 });
-        this.serviceDrawer.visible = false;
-      }
-    });
-  }
-
-  public editServiceData(form: ServiceUpdate) {
-    updateService(form).then(res => {
-      if (res.status === "success") {
-        notification.success("更新接口成功！");
-        this.initServiceList({ pageNo: 1, pageSize: 20 });
-        this.serviceDrawer.visible = false;
-      }
-    });
-  }
-
-  public handleDeleteService(row: Service) {
-    this.$confirm("此操作将永久删除该数据, 是否继续?", "提示", {
-      confirmButtonText: "确定",
-      cancelButtonText: "取消",
-      type: "warning",
-    })
-      .then(() => {
-        deleteService(row).then(res => {
-          if (res.status === "success") {
-            notification.success("删除成功！");
-            this.initServiceList({ pageNo: 1, pageSize: 20 });
-          }
-        });
-      })
-      .catch(() => {});
-  }
-
-  public handleCommand(command: string, row: Service) {
-    if (command === "handleEditReport") {
-      queryOneReport({ serviceId: row.id }).then(res => {
-        this.reportSetting = res.data;
-        this.operateStatus = "edit";
-        this.reportDrawer.visible = true;
-      });
-    } else if (command === "handleCopyFullUrl") {
-      this.$copyText(row.fullUrl).then(() => {
-        this.onSuccess();
-      });
+const handleReportConfirmAdd = (form: ReportModule.Report) => {
+  const data: Partial<ReportModule.Report> = { ...form };
+  const { username } = userStore.userInfo;
+  // 删除 Update 不允许的数据
+  delete data.createUser;
+  delete data.createTime;
+  delete data.modifyTime;
+  delete data.serviceId;
+  // 添加 Update 需要的其他数据
+  data.modifyUser = username;
+  updateReport(data as ReportModule.ReportUpdate).then(res => {
+    if (res.status === "success") {
+      ElNotification.success("更新报表成功！");
+      initServiceList({ pageNo: 1, pageSize: 20 });
+      reportDrawer.visible = false;
     }
-  }
+  });
+};
 
-  public toServiceCol(row: Service) {
-    this.$router.push(`/project/service-col/${row.serviceName}/${row.id}`);
-  }
+const addServiceData = (form: ServiceInsert) => {
+  insertService(form).then(res => {
+    if (res.status === "success") {
+      ElNotification.success("添加接口成功！");
+      initServiceList({ pageNo: 1, pageSize: 20 });
+      serviceDrawer.visible = false;
+    }
+  });
+};
 
-  public toReport(row: Service) {
-    let { project } = DataModule;
-    this.$router.push(`/project/report/${row.reportTitle}/${row.id}/${project.secretKey}`);
-  }
+const editServiceData = (form: ServiceUpdate) => {
+  updateService(form).then(res => {
+    if (res.status === "success") {
+      ElNotification.success("更新接口成功！");
+      initServiceList({ pageNo: 1, pageSize: 20 });
+      serviceDrawer.visible = false;
+    }
+  });
+};
 
-  public handleSizeChange(paging: Paging) {
-    this.initServiceList({ pageNo: paging.currentPage, pageSize: paging.pageSize });
-    this.paging.currentPage = paging.currentPage;
-    this.paging.pageSize = paging.pageSize;
+const handleDeleteService = (row: Service) => {
+  ElMessageBox.confirm("此操作将永久删除该数据, 是否继续?", "提示", {
+    confirmButtonText: "确定",
+    cancelButtonText: "取消",
+    type: "warning",
+  })
+    .then(() => {
+      deleteService(row).then(async res => {
+        if (res.status === "success") {
+          ElNotification.success("删除成功！");
+          await layoutStore.batchRemoveTab([
+            `/project/service-col/${row.serviceName}/${row.id}`,
+            `/project/report/${row.reportTitle}/${row.id}/${dataStore.project.secretKey}`,
+          ]);
+          initServiceList({ pageNo: 1, pageSize: 20 });
+        }
+      });
+    })
+    .catch(() => {});
+};
+
+const handleCommand = (command: string, row: Service) => {
+  if (command === "handleEditReport") {
+    queryOneReport({ serviceId: row.id }).then(res => {
+      reportSetting.value = res.data;
+      operateStatus.value = "edit";
+      reportDrawer.visible = true;
+    });
+  } else if (command === "handleCopyFullUrl") {
+    toClipboard(`${row.fullUrl}?secretKey=${dataStore.project.secretKey}`).then(() => {
+      onSuccess();
+    });
   }
-}
+};
+
+const toServiceCol = (row: Service) => {
+  router.push(`/project/service-col/${row.serviceName}/${row.id}/${dataStore.project.secretKey}`);
+};
+
+const toReport = (row: Service) => {
+  router.push(`/project/report/${row.reportTitle}/${row.id}/${dataStore.project.secretKey}`);
+};
+
+const handleSizeChange = (pagingParams: Paging) => {
+  initServiceList({ pageNo: pagingParams.currentPage, pageSize: pagingParams.pageSize });
+  paging.currentPage = pagingParams.currentPage;
+  paging.pageSize = pagingParams.pageSize;
+};
+
+const handleExport = () => {
+  const tHeader = [
+    "id",
+    "接口名称",
+    "接口地址",
+    "完整地址",
+    "接口状态",
+    "接口描述",
+    "接口 SQL",
+    "查询表名/视图",
+    "插入表名/视图",
+    "更新表名/视图",
+    "删除表名/视图",
+    "创建时间",
+  ];
+  const filterVal = [
+    "id",
+    "serviceName",
+    "serviceUrl",
+    "fullUrl",
+    "status",
+    "serviceDesc",
+    "selectSql",
+    "selectTable",
+    "insertTable",
+    "updateTable",
+    "deleteTable",
+    "createTime",
+  ];
+  const data = formatJsonToArray(serviceData.value, filterVal);
+  exportJsonToExcel(tHeader, data, "service-" + new Date().getTime(), undefined, undefined, true, "xlsx");
+};
 </script>
 
 <style lang="scss" scoped>

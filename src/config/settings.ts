@@ -1,16 +1,31 @@
+import {
+  LayoutModeType,
+  LayoutThemeType,
+  TabsNavModeType,
+  type LanguageType,
+  type LayoutSizeType,
+} from "@/stores/index.d";
+
 interface Settings {
   title: string; // 项目 title
   titleMode: string; // 标题在浏览器标签上的多种模式。0：项目 title + 页面 title，1：用户名 + 页面 title，2：项目 title，3：页面 title
-  layoutMode: string; // 布局设置，0：SideMenu 占屏幕左侧，Header 和 Main Content 占右侧，1：Header 占顶部一行，SideMenu 占下方左侧，Main Content 占下方右侧
+  layoutMode: LayoutModeType; // 布局设置：vertical、classic、transverse、columns、subsystem、mixins
+  tabsNavMode: TabsNavModeType; // 标签页设置：classic、popular
   showSettings: boolean; // 是否显示设置
   showBreadcrumb: boolean; // 是否使用 Breadcrumb
-  showTagsNav: boolean; // 是否使用 tagsNav
+  showTabsNav: boolean; // 是否使用 tagsNav
   showLayoutLogo: boolean; // 是否显示布局 Logo
+  showBreadcrumbIcon: boolean; // 面包屑 Icon 是否显示
+  showTabsNavIcon: boolean; // 标签栏 Icon 是否显示
+  isCollapse: boolean; // 是否折叠菜单栏
+  isDark: boolean; // 是否开启暗色主题
+  isWeak: boolean; // 是否开启灰色主题
+  isGrey: boolean; // 是否开启色弱主题
   routeUseI18n: boolean; // 「路由」布局是否使用国际化，默认为 false，如果不使用，则需要在路由中给需要在菜单中展示的路由设置 meta: {title: 'xxx'} 用来在菜单中显示文字
-  recordTagsNav: boolean; // 是否记录打开过（没关闭）的 tags，下次打开会加载在 tagsNav
-  sideMenuTextTheme: boolean; // 如果是 true，则菜单的激活色跟随系统颜色
-  theme: string; // 主题色
-  sideMenuTheme: "dark" | "light"; // 侧边菜单栏的主题色，暗色和亮色，默认为暗色
+  recordTabsNav: boolean; // 是否记录打开过（没关闭）的 tags，下次打开会加载在 tagsNav
+  maximize: boolean; // MainContent 是否开启最大化，默认不开启（false）
+  primaryTheme: string; // 主题色
+  layoutTheme: LayoutThemeType; // 侧边菜单栏的主题色，暗色和亮色，默认为暗色
   errorLog: {
     showInHeader: boolean; // 设为 false 后不会在顶部显示错误日志徽标
     env: string[]; // 日志收集的环境，默认是 production 生成环境
@@ -30,27 +45,74 @@ interface Settings {
    * 如果看不懂这个配置没关系，当您配置路由时遇到为 true 的场景时，自然懂得
    */
   moreRouteChildrenHideInMenuThenOnlyOne: boolean;
+  layoutSize: LayoutSizeType;
+  language: LanguageType;
+  settingCacheKey: string; // 缓存配置的 key
+  layoutCacheKey: string; // 缓存布局的 key
+  tabsNavCacheKey: string; // 缓存标签页的 key
+  tabActiveExcludes: string[]; // 当 URL 携带 ? 的参数时，标签页的 path 也会携带参数，当 recordTabsNav 为 true 时，会造成多个重复的只是 ? 参数不一样的标签页，该选项指定当出现指定参数不会加载到 path，即该标签的 path 只保留 ? 前面的链接。当存在多个条件，满足任意一个即可
+  isKeepAlive: boolean; // 路由是否开启缓存
+  isFull: boolean; // 是否全屏，不渲染 Layout 布局，只渲染当前路由组件
+  cacheDynamicRoutes: boolean; // 是否缓存路由，默认不开启（false）
+  cacheDynamicRoutesKey: string; // 缓存路由的 key
+  tooltipEffect: "light" | "dark"; // 布局的 el-toolTip 风格
+  routeUseTooltip: boolean; // 菜单的文字超出后，是否使用 el-toolTip 提示，仅针二级路由及以上生效
 }
 
-const settings: Settings = {
-  title: "generic-web",
+const themeSettings: Partial<Settings> = {
+  title: "Generic",
   titleMode: "0",
-  layoutMode: "0",
-  showSettings: true,
+  layoutMode: LayoutModeType.Vertical,
+  tabsNavMode: TabsNavModeType.Classic,
   showBreadcrumb: true,
-  showTagsNav: true,
+  showTabsNav: true,
   showLayoutLogo: true,
-  routeUseI18n: true,
-  recordTagsNav: true,
-  sideMenuTextTheme: true,
-  theme: "#168BF7", // 蓝色偏暗：#168BF7，官方：#409EFF
-  sideMenuTheme: "light",
+  showBreadcrumbIcon: true,
+  showTabsNavIcon: false,
+  recordTabsNav: true,
+  isCollapse: false,
+  isDark: false,
+  isWeak: false,
+  isGrey: false,
+  maximize: false,
+  primaryTheme: "#168BF7", // 蓝色偏暗：#168BF7，官方：#409EFF
+  layoutTheme: LayoutThemeType.Light,
+};
+
+const layoutSettings: Partial<Settings> = {
+  showSettings: true,
   errorLog: {
     showInHeader: true,
     env: ["production"],
   },
-  whiteList: ["*"],
   moreRouteChildrenHideInMenuThenOnlyOne: true,
+  tooltipEffect: "light",
+  layoutSize: "default",
+  language: "zh-CN",
+};
+
+const routerSettings: Partial<Settings> = {
+  routeUseI18n: true,
+  whiteList: [""],
+  isKeepAlive: false,
+  isFull: false,
+  cacheDynamicRoutes: false,
+  routeUseTooltip: false,
+};
+
+const keySetting: Partial<Settings> = {
+  settingCacheKey: "generic_settingsStore",
+  layoutCacheKey: "generic_layoutStore",
+  tabsNavCacheKey: "generic_tabsNav",
+  cacheDynamicRoutesKey: "generic_dynamic_routes",
+  tabActiveExcludes: ["layoutMode"],
+};
+
+const settings: Settings = {
+  ...(themeSettings as Settings),
+  ...(layoutSettings as Settings),
+  ...(routerSettings as Settings),
+  ...(keySetting as Settings),
 };
 
 export default settings;

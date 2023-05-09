@@ -1,8 +1,6 @@
-import request from "@/config/request";
-import { Condition, Page, Response } from "@/types/http";
-import { RequiredKey } from "@/utils/layout";
+import http from "@/config/request";
 
-export declare module ServiceModule {
+export declare namespace ServiceModule {
   interface Service {
     id: number;
     serviceName: string;
@@ -15,6 +13,7 @@ export declare module ServiceModule {
     updateTable: string;
     insertTable: string;
     deleteTable: string;
+    isAuth: number;
     createUser: string;
     createTime: string;
     modifyUser: string;
@@ -24,16 +23,30 @@ export declare module ServiceModule {
     reportTitle: string;
   }
 
-  type ServiceInsert = RequiredKey<Omit<Service, "id" | "createTime" | "modifyTime">, "serviceName" | "serviceUrl">;
+  type ServiceInsert = RequiredKeyPartialOther<
+    Omit<Service, "id" | "createTime" | "modifyTime">,
+    "serviceName" | "serviceUrl"
+  >;
 
-  type ServiceUpdate = RequiredKey<
+  type ServiceUpdate = RequiredKeyPartialOther<
     Omit<Service, "createUser" | "createTime" | "modifyTime" | "projectId" | "categoryId">,
     "id"
   >;
 
-  type ServiceDelete = RequiredKey<Service, "id">;
+  type ServiceDelete = RequiredKeyPartialOther<Service, "id">;
 
   type ServiceSearch = Partial<Service>;
+
+  interface ServiceColList {
+    serviceColId: number;
+    serviceColJsonName: string;
+  }
+
+  interface ServiceAndServiceCol {
+    serviceId: number;
+    serviceName: string;
+    serviceColList: ServiceColList[];
+  }
 }
 
 export const defaultServiceData: Partial<ServiceModule.Service> = {
@@ -47,42 +60,28 @@ export const defaultServiceData: Partial<ServiceModule.Service> = {
   updateTable: "",
   insertTable: "",
   deleteTable: "",
+  isAuth: 0,
 };
 
-export const queryServiceByConditions = (
-  condition: Array<Condition>
-): Promise<Response<Array<ServiceModule.Service>>> => {
-  return request({
-    url: "/genericService/queryGenericServiceByConditions",
-    method: "get",
-    data: condition,
-  });
-};
-
-export const queryOneService = (service: ServiceModule.ServiceSearch): Promise<Response<ServiceModule.Service>> => {
-  return request({
-    url: "/genericService/queryOneGenericService",
+export const queryOneService = (service: ServiceModule.ServiceSearch) => {
+  return http.request<http.Response<ServiceModule.Service>>({
+    url: "/service/queryOneService",
     method: "get",
     params: { ...service },
   });
 };
 
-export const queryServiceList = (
-  service?: ServiceModule.ServiceSearch
-): Promise<Response<Array<ServiceModule.Service>>> => {
-  return request({
-    url: "/genericService/queryGenericServiceList",
+export const queryServiceList = (service?: ServiceModule.ServiceSearch) => {
+  return http.request<http.Response<ServiceModule.Service[]>>({
+    url: "/service/queryServiceList",
     method: "get",
     params: { ...service },
   });
 };
 
-export const queryServiceListPages = (
-  page?: Page,
-  service?: ServiceModule.ServiceSearch
-): Promise<Response<Array<ServiceModule.Service>>> => {
-  return request({
-    url: "/genericService/queryGenericServiceListPages",
+export const queryServiceListPages = (page?: http.Page, service?: ServiceModule.ServiceSearch) => {
+  return http.request<http.Response<ServiceModule.Service[]>>({
+    url: "/service/queryServiceListPages",
     method: "get",
     params: {
       ...service,
@@ -91,53 +90,58 @@ export const queryServiceListPages = (
   });
 };
 
-export const queryServiceConditionsPages = (
-  condition: Array<Condition>,
-  page?: Page
-): Promise<Response<Array<ServiceModule.Service>>> => {
-  return request({
-    url: "/genericService/queryGenericServiceConditionsPages",
+export const queryServiceAndServiceColList = (projectId: number) => {
+  return http.request<http.Response<ServiceModule.ServiceAndServiceCol[]>>({
+    url: `/service/queryServiceAndServiceColList/${projectId}`,
     method: "get",
-    params: {
-      ...page,
+  });
+};
+
+export const insertService = (service: ServiceModule.ServiceInsert) => {
+  return http.request<http.Response<string>>({
+    url: "/service/insertService",
+    method: "post",
+    data: service,
+  });
+};
+
+export const updateService = (service: ServiceModule.ServiceUpdate) => {
+  return http.request<http.Response<string>>({
+    url: "/service/updateService",
+    method: "post",
+    data: service,
+  });
+};
+
+export const deleteService = (service: ServiceModule.ServiceDelete) => {
+  return http.request<http.Response<string>>({
+    url: "/service/deleteServiceById",
+    method: "post",
+    data: service,
+  });
+};
+
+export const queryTableViewName = (databaseName: string) => {
+  return http.request<
+    http.Response<{
+      table: string[];
+      view: string[];
+    }>
+  >({
+    url: `/service/queryTableViewNameByDatabaseName/${databaseName}`,
+    method: "get",
+  });
+};
+
+export const verifySql = (sql: string) => {
+  return http.request<http.Response<number>>({
+    url: "/service/verifySql",
+    method: "post",
+    data: {
+      sql,
     },
-    data: condition,
-  });
-};
-
-export const insertService = (
-  service: ServiceModule.ServiceInsert
-): Promise<Response<Array<ServiceModule.Service>>> => {
-  return request({
-    url: "/genericService/insertGenericService",
-    method: "post",
-    data: service,
-  });
-};
-
-export const updateService = (
-  service: ServiceModule.ServiceUpdate
-): Promise<Response<Array<ServiceModule.Service>>> => {
-  return request({
-    url: "/genericService/updateGenericService",
-    method: "post",
-    data: service,
-  });
-};
-
-export const deleteService = (
-  service: ServiceModule.ServiceDelete
-): Promise<Response<Array<ServiceModule.Service>>> => {
-  return request({
-    url: "/genericService/deleteGenericServiceById",
-    method: "post",
-    data: service,
-  });
-};
-
-export const queryTableName = (databaseName: string): Promise<Response<string[]>> => {
-  return request({
-    url: `/genericService/queryTableNameByDatabaseName/${databaseName}`,
-    method: "get",
+    params: {
+      _type: "form",
+    },
   });
 };

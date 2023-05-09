@@ -64,7 +64,7 @@ const colTypeAndComponent = {
   Text: ["el-input", "textarea"],
 };
 
-const colTypeAndComponentTo = {
+const colTypeAndComponentSearch = {
   String: ["el-input", "text"],
   Integer: ["el-input", "number"],
   Float: ["el-input", "number"],
@@ -94,5 +94,5 @@ export default {
   operateTitle,
   mysqlColTypeOptions,
   colTypeAndComponent,
-  colTypeAndComponentTo
+  colTypeAndComponentSearch,
 };

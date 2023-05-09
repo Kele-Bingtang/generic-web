@@ -1,19 +1,16 @@
 <template>
   <div class="drag-drawer-component">
     <el-drawer
+      ref="drawerWrapperRef"
       :title="title"
-      :visible="visible"
+      v-model="drawerVisible"
       :size="width"
       :direction="direction"
       :before-close="handleBeforeClose"
-      :class-name="outerClasses"
-      ref="drawerWrapper"
       v-bind="$attrs"
-      v-on="$listeners"
-      :modal-append-to-body="!inner"
-      :class="{ 'drag-drawer-inner': inner }"
+      :class="outerClasses"
     >
-      <template #title>
+      <template #header>
         <slot name="header"></slot>
       </template>
       <slot></slot>
@@ -34,161 +31,201 @@
   </div>
 </template>
 
-<script lang="ts">
-import { Component, Prop, Vue } from "vue-property-decorator";
+<script setup lang="ts" name="DragDrawer">
 import DragDrawerTrigger from "./DragDrawerTrigger.vue";
+import type { StyleValue } from "vue";
 
-@Component({
-  components: { DragDrawerTrigger },
-})
-export default class DragDrawer extends Vue {
-  @Prop({ default: false })
-  public visible!: boolean;
-  @Prop({ default: 200 })
-  public width!: string | number;
-  @Prop({ default: "right" })
-  public placement!: string;
-  @Prop({ default: false })
-  public draggable!: boolean;
-  @Prop({ default: 200 })
-  public minWidth!: string | number;
-  @Prop({ default: false })
-  public inner!: boolean;
-  @Prop({ default: "" })
-  public title!: string;
-
-  public canMove = false;
-  public wrapperWidth = 0;
-  public wrapperLeft = 0;
-
-  get outerClasses() {
-    const classesArray = [`drag-drawer-wrapper`, this.canMove ? "no-select pointer-events-none" : ""];
-    return classesArray.join(" ");
-  }
-
-  get direction() {
-    if (this.placement == "right") {
-      return "rtl";
-    } else if (this.placement == "left") {
-      return "ltr";
-    } else if (this.placement == "top") {
-      return "ttb";
-    } else if (this.placement == "bottom") {
-      return "btt";
-    }
-    return this.$attrs.direction;
-  }
-
-  get innerWidth() {
-    const width = this.width as number;
-    return width <= 100 ? (this.wrapperWidth * width) / 100 : width;
-  }
-  get triggerStyle(): any {
-    let direction = "right";
-    if (this.direction === "rtl") {
-      direction = "right";
-    } else if (this.direction === "ltr") {
-      direction = "left";
-    }
-    // TODO：支持 top 和 bottom 移动
-    // else if (this.direction === "ttb") {
-    //   direction = "top";
-    // } else if (this.direction === "btt") {
-    //   direction = "bottom";
-    // }
-    return {
-      [direction]: `${this.innerWidth}px`,
-      position: this.inner ? "absolute" : "fixed",
-    };
-  }
-  mounted() {
-    document.addEventListener("mousemove", this.handleMousemove);
-    document.addEventListener("mouseup", this.handleMouseup);
-    this.setWrapperWidth();
-  }
-  beforeDestroy() {
-    document.removeEventListener("mousemove", this.handleMousemove);
-    document.removeEventListener("mouseup", this.handleMouseup);
-  }
-  public handleBeforeClose(done: Function) {
-    this.$emit("update:visible", false);
-  }
-  public handleTriggerMousedown(event: Event) {
-    event.preventDefault();
-    this.canMove = true;
-    this.$emit("on-resize-start");
-    // 防止鼠标选中抽屉中文字，造成拖动 trigger 触发浏览器原生拖动行为
-    (window as any).getSelection().removeAllRanges();
-  }
-  public handleMousemove(event: any) {
-    if (!this.canMove) return;
-    // 更新容器宽度和距离左侧页面距离，如果是 window 则距左侧距离为 0
-    this.setWrapperWidth();
-    const left = event.pageX - this.wrapperLeft;
-    // 如果抽屉方向为右边，宽度计算需用容器宽度减去 left
-    let width = this.direction === "rtl" ? this.wrapperWidth - left : left;
-    // 限定做小宽度
-    width = Math.max(width, parseFloat(this.minWidth as string));
-    event.atMin = width === parseFloat(this.minWidth as string);
-    // 如果当前 width 不大于 100，视为百分比
-    if (width <= 100) width = (width / this.wrapperWidth) * 100;
-    this.$emit("update:width", width);
-    this.$emit("on-resize", event);
-  }
-  public handleMouseup(event: Event) {
-    this.canMove = false;
-    this.$emit("on-resize-end");
-  }
-  public setWrapperWidth() {
-    const { width, left } = (this.$refs.drawerWrapper as any).$el.getBoundingClientRect();
-    this.wrapperWidth = width;
-    this.wrapperLeft = left;
-  }
+interface DragDrawerProps {
+  visible?: boolean;
+  width?: string | number;
+  placement?: string;
+  draggable?: boolean;
+  minWidth?: string | number;
+  inner?: boolean;
+  title?: string;
 }
+
+const props = withDefaults(defineProps<DragDrawerProps>(), {
+  visible: false,
+  width: 200,
+  placement: "right",
+  draggable: false,
+  minWidth: 200,
+  inner: false,
+  title: "",
+});
+
+type DragDrawerEmitProps = {
+  (e: "update:visible", visible: boolean): void;
+  (e: "on-resize-start"): void;
+  (e: "update:width", width: number): void;
+  (e: "on-resize", event: MouseEvent): void;
+  (e: "on-resize-end"): void;
+};
+
+const emits = defineEmits<DragDrawerEmitProps>();
+
+const drawerWrapperRef = ref();
+const canMove = ref(false);
+const wrapperWidth = ref(0);
+const wrapperLeft = ref(0);
+const drawerVisible = ref(false);
+
+watch(
+  () => props.visible,
+  () => {
+    drawerVisible.value = props.visible;
+  },
+  { immediate: true }
+);
+
+const outerClasses = computed(() => {
+  const classesArray = [
+    props.inner ? "drag-drawer-inner" : "",
+    `drag-drawer-wrapper`,
+    canMove.value ? "no-select" : "",
+  ];
+  return classesArray.join(" ");
+});
+
+const direction = computed(() => {
+  if (props.placement === "right") {
+    return "rtl";
+  } else if (props.placement === "left") {
+    return "ltr";
+  } else if (props.placement === "top") {
+    return "ttb";
+  } else if (props.placement === "bottom") {
+    return "btt";
+  }
+  return "rtl";
+});
+
+const innerWidth = computed(() => {
+  const width = props.width as number;
+  return width <= 100 ? (wrapperWidth.value * width) / 100 : width;
+});
+
+const triggerStyle = computed(() => {
+  let d = "right";
+  if (direction.value === "rtl") {
+    d = "right";
+  } else if (direction.value === "ltr") {
+    d = "left";
+  }
+  // TODO：支持 top 和 bottom 移动
+  // else if (this.direction === "ttb") {
+  //   direction = "top";
+  // } else if (this.direction === "btt") {
+  //   direction = "bottom";
+  // }
+  return {
+    [d]: `${innerWidth.value}px`,
+    position: props.inner ? "absolute" : "fixed",
+  } as StyleValue;
+});
+
+onMounted(() => {
+  document.addEventListener("mousemove", handleMousemove);
+  document.addEventListener("mouseup", handleMouseup);
+  setWrapperWidth();
+});
+
+onBeforeUnmount(() => {
+  document.removeEventListener("mousemove", handleMousemove);
+  document.removeEventListener("mouseup", handleMouseup);
+});
+
+const handleBeforeClose = () => {
+  emits("update:visible", false);
+};
+
+const handleTriggerMousedown = (event: Event) => {
+  event.preventDefault();
+  canMove.value = true;
+  emits("on-resize-start");
+  // 防止鼠标选中抽屉中文字，造成拖动 trigger 触发浏览器原生拖动行为
+  (window as any).getSelection().removeAllRanges();
+};
+
+const handleMousemove = (event: any) => {
+  if (!canMove.value) return;
+  // 更新容器宽度和距离左侧页面距离，如果是 window 则距左侧距离为 0
+  setWrapperWidth();
+  const left = event.pageX - wrapperLeft.value;
+  // 如果抽屉方向为右边，宽度计算需用容器宽度减去 left
+  let width = direction.value === "rtl" ? wrapperWidth.value - left : left;
+  // 限定做小宽度
+  width = Math.max(width, parseFloat(props.minWidth as string));
+  event.atMin = width === parseFloat(props.minWidth as string);
+  // 如果当前 width 不大于 100，视为百分比
+  if (width <= 100) width = (width / wrapperWidth.value) * 100;
+  emits("update:width", width);
+  emits("on-resize", event);
+};
+
+const handleMouseup = () => {
+  canMove.value = false;
+  emits("on-resize-end");
+};
+
+const setWrapperWidth = () => {
+  const { width, left } = drawerWrapperRef && drawerWrapperRef.value.$el.nextElementSibling.getBoundingClientRect();
+  wrapperWidth.value = width;
+  wrapperLeft.value = left;
+};
 </script>
 
 <style lang="scss" scoped>
 .drag-drawer-component {
-  &.no-select {
-    user-select: none;
-  }
-  &.pointer-events-none {
+  .no-select {
     pointer-events: none;
-    & .drag-drawer-trigger-wrapper {
+    user-select: none;
+
+    .drag-drawer-trigger-wrapper {
       pointer-events: all;
     }
   }
-  .drag-drawer-body-wrapper {
-    width: 100%;
-    height: 100%;
-    padding: 16px;
-    overflow: auto;
-  }
+
   .drag-drawer-trigger-wrapper {
     top: 0;
-    height: 100%;
     width: 0;
+    height: 100%;
   }
+
   .drag-drawer-footer {
-    flex-grow: 1;
-    width: 100%;
     bottom: 0;
     left: 0;
-    border-top: 1px solid #e8e8e8;
+    flex-grow: 1;
+    width: 100%;
     padding: 10px 16px;
-    background: #fff;
+    background: #ffffff;
+    border-top: 1px solid #e8e8e8;
   }
 }
 </style>
 <style lang="scss">
 .drag-drawer-component {
+  .no-select.el-drawer {
+    transition: none;
+  }
+
+  .drag-drawer-footer {
+    bottom: 0;
+    left: 0;
+    flex-grow: 1;
+    width: 100%;
+    padding: 10px 16px;
+    background: #ffffff;
+    border-top: 1px solid #e8e8e8;
+  }
+
   .drag-drawer-inner {
     position: absolute;
+    overflow: visible;
+
     & + .v-modal {
       position: absolute;
-    }
-    .el-drawer {
-      overflow: visible;
     }
   }
 }

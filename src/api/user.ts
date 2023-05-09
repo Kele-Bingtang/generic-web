@@ -1,8 +1,6 @@
-import request from "@/config/request";
-import { Condition, Page, Response } from "@/types/http";
-import { RequiredKey } from "@/utils/layout";
+import http from "@/config/request";
 
-export declare module UserInfoModule {
+export declare namespace UserInfoModule {
   interface Role {
     id: number;
     code: string;
@@ -23,6 +21,7 @@ export declare module UserInfoModule {
     birthday: string;
     phone: string;
     status: number;
+    avatar: string;
     registerTime: string;
     modifyTime: string;
     role: Role;
@@ -30,9 +29,9 @@ export declare module UserInfoModule {
 
   type UserInsert = Omit<User, "id" | "registerTime" | "modifyTime">;
 
-  type UserUpdate = RequiredKey<Omit<User, "registerTime" | "modifyTime">, "username">;
+  type UserUpdate = RequiredKeyPartialOther<Omit<User, "registerTime" | "modifyTime">, "username">;
 
-  type UserDelete = RequiredKey<User, "username">;
+  type UserDelete = RequiredKeyPartialOther<User, "username">;
 
   type UserSearch = Partial<User>;
 }
@@ -54,8 +53,8 @@ export interface LoginInfo {
   password: string;
 }
 
-export const login = (params: LoginInfo): Promise<Response<string>> => {
-  return request({
+export const login = (params: LoginInfo) => {
+  return http.request<http.Response<string>>({
     url: "/login",
     method: "post",
     params: {
@@ -64,9 +63,9 @@ export const login = (params: LoginInfo): Promise<Response<string>> => {
   });
 };
 
-export const getUserInfo = (token: string): Promise<Response<UserInfoModule.User>> => {
-  return request({
-    url: "/genericUser/getUserInfo",
+export const getUserInfo = (token: string) => {
+  return http.request<http.Response<UserInfoModule.User>>({
+    url: "/user/getUserInfo",
     method: "post",
     params: {
       token,
@@ -74,20 +73,9 @@ export const getUserInfo = (token: string): Promise<Response<UserInfoModule.User
   });
 };
 
-export const queryUserByConditions = (condition: Array<Condition>): Promise<Response<Array<UserInfoModule.User>>> => {
-  return request({
-    url: "/genericUser/queryGenericUserByConditions",
-    method: "get",
-    data: condition,
-  });
-};
-
-export const queryUserListPages = (
-  page?: Page,
-  user?: UserInfoModule.UserSearch
-): Promise<Response<Array<UserInfoModule.User>>> => {
-  return request({
-    url: "/genericUser/queryGenericUserListPages",
+export const queryUserListPages = (page?: http.Page, user?: UserInfoModule.UserSearch) => {
+  return http.request<http.Response<UserInfoModule.User[]>>({
+    url: "/user/queryUserListPages",
     method: "get",
     params: {
       ...user,
@@ -96,12 +84,9 @@ export const queryUserListPages = (
   });
 };
 
-export const queryUserConditionsPages = (
-  condition: Array<Condition>,
-  page?: Page
-): Promise<Response<Array<UserInfoModule.User>>> => {
-  return request({
-    url: "/genericUser/queryGenericUserConditionsPages",
+export const queryUserConditionsPages = (condition: http.Condition[], page?: http.Page) => {
+  return http.request<http.Response<UserInfoModule.User[]>>({
+    url: "/user/queryUserConditionsPages",
     method: "get",
     params: {
       ...page,
@@ -110,36 +95,33 @@ export const queryUserConditionsPages = (
   });
 };
 
-export const insertUser = (user: UserInfoModule.UserInsert): Promise<Response<Array<UserInfoModule.User>>> => {
-  return request({
-    url: "/genericUser/insertGenericUser",
+export const insertUser = (user: UserInfoModule.UserInsert) => {
+  return http.request<http.Response<string>>({
+    url: "/user/insertUser",
     method: "post",
     data: user,
   });
 };
 
-export const updateUser = (user: UserInfoModule.UserUpdate): Promise<Response<Array<UserInfoModule.User>>> => {
-  return request({
-    url: "/genericUser/updateGenericUser",
+export const updateUser = (user: UserInfoModule.UserUpdate) => {
+  return http.request<http.Response<string>>({
+    url: "/user/updateUser",
     method: "post",
     data: user,
   });
 };
 
-export const deleteUser = (user: UserInfoModule.UserDelete): Promise<Response<Array<UserInfoModule.User>>> => {
-  return request({
-    url: "/genericUser/deleteGenericUserById",
+export const deleteUser = (user: UserInfoModule.UserDelete) => {
+  return http.request<http.Response<string>>({
+    url: "/user/deleteUserById",
     method: "post",
     data: user,
   });
 };
 
-export const queryMemberInProject = (
-  secretKey: string,
-  page?: Page
-): Promise<Response<Array<Omit<UserInfoModule.User, "id" | "password">>>> => {
-  return request({
-    url: `/genericUser/queryGenericMemberInProject/${secretKey}`,
+export const queryMemberInProject = (secretKey: string, page?: http.Page) => {
+  return http.request<http.Response<Omit<UserInfoModule.User, "id" | "password">[]>>({
+    url: `/user/queryMemberInProject/${secretKey}`,
     method: "get",
     params: {
       ...page,
@@ -147,25 +129,23 @@ export const queryMemberInProject = (
   });
 };
 
-export const queryAllMemberNotInProject = (secretKey: string): Promise<Response<Array<UserInfoModule.User>>> => {
-  return request({
-    url: `/genericUser/queryAllMemberNotInProject/${secretKey}`,
+export const queryAllMemberNotInProject = (secretKey: string) => {
+  return http.request<http.Response<UserInfoModule.User[]>>({
+    url: `/user/queryAllMemberNotInProject/${secretKey}`,
     method: "get",
   });
 };
 
-export const queryGenericUserRole = (
-  secretKey: string
-): Promise<Response<Array<Omit<UserInfoModule.User, "id" | "password">>>> => {
-  return request({
-    url: `/genericUser/queryGenericUserRole/${secretKey}`,
+export const queryGenericUserRole = (secretKey: string) => {
+  return http.request<http.Response<Pick<UserInfoModule.Role, "code" | "name">>>({
+    url: `/user/queryUserRole/${secretKey}`,
     method: "get",
   });
 };
 
-export const updateUserRole = (username: string, projectId: number, roleCode: string): Promise<Response<string>> => {
-  return request({
-    url: "/genericUser/updateGenericUserRole",
+export const updateUserRole = (username: string, projectId: number, roleCode: string) => {
+  return http.request<http.Response<string>>({
+    url: "/user/updateUserRole",
     method: "post",
     params: {
       _type: "form",
@@ -178,17 +158,17 @@ export const updateUserRole = (username: string, projectId: number, roleCode: st
   });
 };
 
-export const addMember = (projectId: number, userList: Array<{ username: string }>): Promise<Response<string>> => {
-  return request({
-    url: `/genericUser/insertGenericUserProject/${projectId}`,
+export const addMember = (projectId: number, userList: Array<{ username: string }>) => {
+  return http.request<http.Response<string>>({
+    url: `/user/insertUserProject/${projectId}`,
     method: "post",
     data: userList,
   });
 };
 
-export const removeOneMember = (username: string, projectId: number): Promise<Response<string>> => {
-  return request({
-    url: `/genericUser/removeOneMember`,
+export const removeOneMember = (username: string, projectId: number) => {
+  return http.request<http.Response<string>>({
+    url: `/user/removeOneMember`,
     method: "post",
     params: {
       _type: "form",

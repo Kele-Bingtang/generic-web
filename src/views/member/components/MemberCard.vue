@@ -2,17 +2,17 @@
   <div class="member-card">
     <el-row :gutter="10" class="user-list-item">
       <el-col :span="3" class="item-info">
-        <img src="@/assets/default_member.jpg" alt="头像" class="avatar" />
+        <img src="@/assets/images/default_member.jpg" alt="头像" class="avatar" />
       </el-col>
       <el-col :lg="3" :md="3" :sm="3" class="item-info vertical">
         <p>{{ member.username }}</p>
-        <el-tag type="primary" v-if="isCreator && userInfo.username === member.username">创建者</el-tag>
+        <el-tag v-if="isCreator && userInfo.username === member.username">创建者</el-tag>
         <el-tag type="info" v-if="!(isCreator && userInfo.username === member.username) && member.role.code">
           {{ member.role.name }}
         </el-tag>
         <el-tag
           v-if="userInfo.username === member.username"
-          style="color: #fff; background-color: rgb(59, 89, 153); margin-top: 5px"
+          style="margin-top: 5px; color: #ffffff; background-color: rgb(59 89 153)"
         >
           你自己
         </el-tag>
@@ -32,122 +32,109 @@
       <el-col :lg="6" :md="6" :sm="6" class="item-info">
         <el-radio-group
           v-model="member.roleSelect"
-          @input="roleCode => handleSelect(roleCode, member)"
+          @input="(roleCode: string) => handleSelect(roleCode, member)"
           :disabled="!hasPermission(member)"
         >
           <el-tooltip effect="dark" content="只读" placement="top">
             <el-radio label="visitor">游客</el-radio>
           </el-tooltip>
-          <el-tooltip effect="dark" content="可编辑" placement="top">
+          <el-tooltip effect="dark" content="可编辑、删除" placement="top">
             <el-radio label="developer">开发者</el-radio>
           </el-tooltip>
-
-          <el-tooltip effect="dark" content="可编辑、可修改非管理员权限" placement="top">
+          <el-tooltip effect="dark" content="可编辑、删除、可修改非管理员权限" placement="top">
             <el-radio label="admin">管理员</el-radio>
           </el-tooltip>
-          <el-popconfirm title="这确定删除这个成员吗？" @confirm="handleRemoveMember(member)">
-            <el-button
-              v-waves
-              type="text"
-              icon="el-icon-delete"
-              class="btn-danger"
-              slot="reference"
-              v-if="hasPermission(member)"
-            >
-              移除
-            </el-button>
-          </el-popconfirm>
         </el-radio-group>
+        <template v-if="hasPermission(member)">
+          <el-popconfirm title="这确定删除这个成员吗？" @confirm="handleRemoveMember(member)">
+            <template #reference>
+              <el-button v-waves link type="danger" icon="Delete">移除</el-button>
+            </template>
+          </el-popconfirm>
+        </template>
       </el-col>
     </el-row>
   </div>
 </template>
 
-<script lang="ts">
-import { DataModule } from "@/store/modules/data";
-import { UserModule } from "@/store/modules/user";
-import { Component, Prop, Vue } from "vue-property-decorator";
-import { Member } from "../index.vue";
+<script setup lang="ts" name="MemberCard">
+import { useUserStore } from "@/stores/user";
+import type { Member } from "../index.vue";
 
-@Component({ name: "MemberCard" })
-export default class extends Vue {
-  @Prop({ required: true })
-  public member!: Member;
-  @Prop({ default: false })
-  public isCreator!: Member;
-  @Prop({ default: false })
-  public isAdmin!: Member;
+const userStore = useUserStore();
 
-  get userInfo() {
-    return UserModule.userInfo;
-  }
-
-  get currentProject() {
-    return DataModule.project;
-  }
-
-  public hasPermission(member: Member) {
-    let { userInfo, isCreator, isAdmin } = this;
-    // 自己无法操作自己
-    if (userInfo.username === member.username) {
-      return false;
-    }
-    // 如果是创建者
-    if (isCreator) {
-      return true;
-    }
-    // 如果其他人是管理员
-    if (userInfo.username !== member.username && member.role.code === "admin") {
-      return false;
-    }
-    // 如果自己是管理员
-    if (isAdmin) {
-      return true;
-    }
-    return false;
-  }
-
-  public getGender(gender: number) {
-    if (gender === 0) {
-      return "保密";
-    } else if (gender === 1) {
-      return "男";
-    } else if (gender === 2) {
-      return "女";
-    }
-  }
-
-  public handleSelect(roleCode: string, member: Member) {
-    this.$emit("select", roleCode, member);
-  }
-
-  public handleRemoveMember(member: Member) {
-    this.$emit("remove", member);
-  }
+interface MemberCardProps {
+  member: Member;
+  isCreator?: boolean;
+  isAdmin?: boolean;
 }
+
+interface MemberEmits {
+  (e: "select", roleCode: string, member: Member): void;
+  (e: "remove", member: Member): void;
+}
+
+const props = withDefaults(defineProps<MemberCardProps>(), {
+  isCreator: false,
+  isAdmin: false,
+});
+
+const emits = defineEmits<MemberEmits>();
+
+const userInfo = computed(() => userStore.userInfo);
+
+const hasPermission = (member: Member) => {
+  // 自己无法操作自己
+  if (userInfo.value.username === member.username) return false;
+  // 如果是创建者
+  if (props.isCreator) return true;
+  // 如果其他人是管理员
+  if (userInfo.value.username !== member.username && member.role.code === "admin") return false;
+  // 如果自己是管理员
+  if (props.isAdmin) return true;
+  return false;
+};
+
+const getGender = (gender: number) => {
+  if (gender === 0) return "保密";
+  else if (gender === 1) return "男";
+  else if (gender === 2) return "女";
+};
+
+const handleSelect = (roleCode: string, member: Member) => {
+  emits("select", roleCode, member);
+};
+
+const handleRemoveMember = (member: Member) => {
+  emits("remove", member);
+};
 </script>
 
 <style lang="scss" scoped>
 .member-card {
   .user-list-item {
     padding: 8px 16px;
-    color: rgba(0, 0, 0, 0.85);
+    color: rgb(0 0 0 / 85%);
     border-bottom: 1px solid #f0f0f0;
+
     .item-info {
-      min-height: 60px;
       display: flex;
       align-items: center;
       justify-content: center;
+      min-height: 60px;
       padding: 0 10px;
-      color: rgba(0, 0, 0, 0.85);
       font-size: 14px;
+      color: rgb(0 0 0 / 85%);
+
       &.vertical {
         flex-direction: column;
+
         & > p {
           margin-top: 0;
           margin-bottom: 6px;
         }
       }
+
       .avatar {
         width: 50px;
       }

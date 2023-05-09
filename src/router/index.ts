@@ -1,73 +1,112 @@
-import Vue from "vue";
-import VueRouter, { Route } from "vue-router";
-import { constantRoutes, rolesRoutes } from "./routes-config";
-import { getCacheToken } from "@/utils/cache";
-import { loadRoutes } from "./utils";
-import { UserModule } from "@/store/modules/user";
-import { PermissionModule } from "@/store/modules/permission";
-import { setTitle } from "@/utils/layout";
+import NProgress from "@/config/nprogress";
 import settings from "@/config/settings";
+import { useRoutes } from "@/hooks/useRoutes";
+import { usePermissionStore } from "@/stores/permission";
+import { useUserStore } from "@/stores/user";
+import {
+  createRouter,
+  createWebHashHistory,
+  createWebHistory,
+  type RouteRecordRaw,
+  type RouterHistory,
+} from "vue-router";
+import { constantRoutes, errorRouter, LOGIN_URL } from "./routesConfig";
 
-Vue.use(VueRouter);
-
-const createRouter = () =>
-  new VueRouter({
-    mode: "history",
-    base: process.env.VUE_APP_ROUTE_BASE,
-    routes: constantRoutes,
-  });
-
-const router = createRouter();
-
-export function resetRouter() {
-  const newRouter = createRouter();
-  (router as any).matcher = (newRouter as any).matcher; // reset router
-}
-
-const { whiteList } = settings;
-
-router.beforeEach(async (to: Route, from: Route, next: any) => {
-  let token = UserModule.token || getCacheToken();
-  if (token) {
-    if (to.path === "/login") {
-      next({ path: "/" });
-    } else {
-      if (UserModule.roles.length === 0) {
-        try {
-          const roles = await UserModule.getUserInfo();
-          if (!PermissionModule.isLoadedRoutes) {
-            loadRoutes(rolesRoutes, roles, router);
-            next({ ...to, replace: true });
-          }
-        } catch (err) {
-          UserModule.resetToken();
-          // next(`/login?redirect=${to.path}`)
-        }
-      } else {
-        next();
-      }
-    }
-  } else {
-    // 白清单
-    if (whiteList.includes("*")) {
-      if (!PermissionModule.isLoadedRoutes) {
-        loadRoutes(rolesRoutes, ["*"], router);
-        next({ ...to, replace: true });
-      } else {
-        next();
-      }
-    } else if (whiteList.includes("next") || whiteList.includes(to.path)) {
-      next();
-    } else {
-      // next(`/login?redirect=${to.path}`)
-    }
-  }
+const router = createRouter({
+  history: getHistoryMode(import.meta.env.VITE_ROUTER_MODE),
+  routes: [...constantRoutes, ...errorRouter] as RouteRecordRaw[],
+  scrollBehavior: () => ({ left: 0, top: 0 }),
 });
 
-router.afterEach((to: Route) => {
-  // 修改页面的 title
-  setTitle(to, router.app);
-  window.scrollTo(0, 0);
+/**
+ * @description 重置路由
+ **/
+export function resetRouter() {
+  const permissionStore = usePermissionStore();
+  permissionStore.flatRouteList.forEach(route => {
+    const { name, meta } = route;
+    if (name && router.hasRoute(name) && meta?._dynamic) router.removeRoute(name);
+  });
+}
+
+const whiteList = settings.whiteList;
+
+/**
+ * @description 路由拦截 beforeEach
+ **/
+router.beforeEach(async (to, from, next) => {
+  const userStore = useUserStore();
+  const permissionStore = usePermissionStore();
+  const { initDynamicRouters } = useRoutes();
+  const token = userStore.token;
+
+  NProgress.start();
+  // 判断是访问登陆页，有 Token 就在当前页面，没有 Token 重置路由并放行到登陆页
+  if (to.path === "/login") {
+    if (token) return next(from.fullPath);
+    resetRouter();
+    return next();
+  }
+
+  // 判断访问页面是否在路由白名单地址中，如果存在直接放行
+  if (whiteList.includes("*")) {
+    if (!permissionStore.loadedRouteList.length) {
+      await initDynamicRouters(["*"]);
+      return next({ ...to, replace: true });
+    }
+    return next();
+  } else if (whiteList.includes("next") || whiteList.includes(to.path)) return next();
+
+  // 判断是否有 Token，没有重定向到 login
+  if (!token) return next({ path: "/login", replace: true });
+
+  // 判断是否存在角色或加载过路由，如果不存在，则加载路由
+  if (!permissionStore.loadedRouteList.length) {
+    try {
+      await initDynamicRouters();
+      return next({ ...to, replace: true });
+    } catch (error) {
+      userStore.resetToken();
+      router.replace(LOGIN_URL);
+      return Promise.reject(error);
+    }
+  }
+  next();
+});
+
+/**
+ * @description 路由跳转结束
+ **/
+router.afterEach(() => {
+  NProgress.done();
+});
+
+/**
+ * @description 路由跳转错误
+ **/
+router.onError(error => {
+  NProgress.done();
+  console.warn("路由错误", error.message);
 });
 
 export default router;
+
+/**
+ * 获取路由历史模式 https://next.router.vuejs.org/zh/guide/essentials/history-mode.html
+ * @param routerHistory 路由的历史模式
+ */
+function getHistoryMode(routerHistory: string): RouterHistory {
+  if (!routerHistory) return createWebHistory("");
+  // len 为 1 代表只有历史模式 为 2 代表历史模式中存在 base 参数 https://next.router.vuejs.org/zh/api/#%E5%8F%82%E6%95%B0-1
+  const historyMode = routerHistory.split(",");
+  const leftMode = historyMode[0];
+  const rightMode = historyMode[1];
+  if (historyMode.length === 1) {
+    if (leftMode === "hash") return createWebHashHistory("");
+    else if (leftMode === "h5") return createWebHistory("");
+  } else if (historyMode.length === 2) {
+    if (leftMode === "hash") return createWebHashHistory(rightMode);
+    else if (leftMode === "h5") return createWebHistory(rightMode);
+  }
+  return createWebHistory("");
+}
